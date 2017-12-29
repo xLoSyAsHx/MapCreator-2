@@ -1,22 +1,59 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
+#include <QOpenGLWidget>
+#include <QMatrix4x4>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLTexture>
+#include <QOpenGLBuffer>
 
-namespace Ui {
-class MainWindow;
-}
+struct VertexData {
+    VertexData()
+    {
+    }
 
-class MainWindow : public QMainWindow
+    VertexData(QVector3D p, QVector2D t, QVector3D n) :
+        position(p), texCoord(t), normal(n)
+    {
+    }
+
+    QVector3D position;
+    QVector2D texCoord;
+    QVector3D normal;
+};
+
+class MainWindow : public QOpenGLWidget
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+protected:
+    void initializeGL() override;
+    void resizeGL(int w, int h) override;
+    void paintGL() override;
+
+    void closeEvent(QCloseEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+
+    void initShaders();
+    void initCube(float width);
+
 private:
-    Ui::MainWindow *ui;
+    QMatrix4x4 m_projectionMatrix;
+    QOpenGLShaderProgram m_shaderProgramm;
+    QOpenGLTexture *m_texture;
+
+    QOpenGLBuffer m_vertexBuffer;
+    QOpenGLBuffer m_indexBuffer;
+
+    QVector2D m_mousePosition;
+    QQuaternion m_rotation;
+
+    int counter = 0;
 };
 
 #endif // MAINWINDOW_H

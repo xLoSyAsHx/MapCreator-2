@@ -4,9 +4,8 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui widgets
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = MapCreator
 TEMPLATE = app
@@ -30,5 +29,8 @@ SOURCES += \
 HEADERS += \
         mainwindow.h
 
-FORMS += \
-        mainwindow.ui
+LIBS += -lopengl32
+
+RESOURCES += \
+    shaders.qrc \
+    textures.qrc
