@@ -3,14 +3,16 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QOpenGLContext>
+
+#include <QtMath>
+
+#include "simpleobject3d.h"
+#include "group3d.h"
 
 MainWindow::MainWindow(QWidget *parent) :
-    QOpenGLWidget(parent),
-    m_texture(nullptr),
-    m_vertexBuffer(QOpenGLBuffer::VertexBuffer),
-    m_indexBuffer(QOpenGLBuffer::IndexBuffer)
+    QOpenGLWidget(parent), m_z(-5.0f)
 {
-
 }
 
 MainWindow::~MainWindow()
@@ -26,7 +28,51 @@ void MainWindow::initializeGL()
     glEnable(GL_CULL_FACE);
 
     initShaders();
-    initCube(1.0f);
+
+    float width = 8.0f;
+    float height = 8.0f;
+    float length = 8.0f;
+
+    float step = 4.0f;
+
+    // Group 1
+    m_groups.append(new Group3D);
+    for (float x = -width; x <= width; x += step) {
+
+        for (float y = -height; y <= height; y += step) {
+
+            for (float z = -length; z <= length; z += step) {
+                initCube(2.0f);
+                m_objects.last()->translate(QVector3D(x, y, z));
+                m_groups.last()->addObject(m_objects.last());
+            }
+        }
+    }
+    m_groups[0]->translate(QVector3D(-8.0, 0.0f, 0.0f));
+
+    // Group 2
+    m_groups.append(new Group3D);
+    for (float x = -width; x <= width; x += step) {
+
+        for (float y = -height; y <= height; y += step) {
+
+            for (float z = -length; z <= length; z += step) {
+                initCube(2.0f);
+                m_objects.last()->translate(QVector3D(x, y, z));
+                m_groups.last()->addObject(m_objects.last());
+            }
+        }
+    }
+    m_groups[1]->translate(QVector3D(8.0, 0.0f, 0.0f));
+
+    // Group 3
+    m_groups.append(new Group3D);
+    m_groups.last()->addObject(m_groups[0]);
+    m_groups.last()->addObject(m_groups[1]);
+
+    m_transformObjects.append(m_groups.last());
+
+    m_timer.start(30, this);
 }
 
 void MainWindow::resizeGL(int w, int h)
@@ -34,51 +80,31 @@ void MainWindow::resizeGL(int w, int h)
     float aspect = w / qreal(h ? h : 1);
 
     m_projectionMatrix.setToIdentity();
-    m_projectionMatrix.perspective(45, aspect, 0.1f, 10.0f);
+    m_projectionMatrix.perspective(45, aspect, 0.01f, 100.0f);
 }
 
 void MainWindow::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    QMatrix4x4 modelViewMatrix;
-    modelViewMatrix.setToIdentity();
-    modelViewMatrix.translate(0.0f, 0.0f, -5.0f);
-    modelViewMatrix.rotate(m_rotation);
-
-    m_texture->bind(0);
-
-    //m_shaderProgramm.bind();
-    m_shaderProgramm.setUniformValue("MVPMatrix", m_projectionMatrix * modelViewMatrix);
-    m_shaderProgramm.setUniformValue("qt_Texture0", 0);
+    QMatrix4x4 viewMatrix;
+    viewMatrix.setToIdentity();
+    viewMatrix.translate(0.0f, 0.0f, m_z);
+    viewMatrix.rotate(m_rotation);
 
 
-    // Bind buffers
-    m_vertexBuffer.bind();
-    m_indexBuffer.bind();
+    // Set uniform values
+    m_shaderProgramm.setUniformValue("u_projectionMatrix", m_projectionMatrix);
+    m_shaderProgramm.setUniformValue("u_viewMatrix", viewMatrix);
+    m_shaderProgramm.setUniformValue("u_lightPosition", QVector4D(0.0, 0.0, 0.0, 1.0));
+    m_shaderProgramm.setUniformValue("u_lightPower", 1.0f);
 
-    int offset = 0;
-
-    int location = m_shaderProgramm.attributeLocation("a_position");
-    m_shaderProgramm.enableAttributeArray(location);
-    m_shaderProgramm.setAttributeBuffer(location, GL_FLOAT, offset, 3, sizeof(VertexData));
-
-    offset += sizeof(QVector3D);
-
-    location = m_shaderProgramm.attributeLocation("a_textcoord0");
-    m_shaderProgramm.enableAttributeArray(location);
-    m_shaderProgramm.setAttributeBuffer(location, GL_FLOAT, offset, 2, sizeof(VertexData));
-
-
-
-    glDrawElements(GL_TRIANGLES, m_indexBuffer.size(), GL_UNSIGNED_INT, 0);
-
+    for (auto it = m_transformObjects.cbegin(); it != m_transformObjects.cend(); ++it)
+        (*it)->draw(&m_shaderProgramm, context()->functions());
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    qDebug() << "In close event\n";
-
     QMessageBox::StandardButton ret;
     ret = QMessageBox::question( this,  QApplication::applicationName(), tr(" Do you want to close programm ? "),
                                  QMessageBox::Yes | QMessageBox::No , QMessageBox::No );
@@ -99,8 +125,6 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 
 void MainWindow::mouseMoveEvent(QMouseEvent *event)
 {
-
-
     if (event->buttons() != Qt::LeftButton) return;
 
     QVector2D diff = QVector2D(event->localPos()) - m_mousePosition;
@@ -115,6 +139,42 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
     update();
 }
 
+void MainWindow::wheelEvent(QWheelEvent *event)
+{
+    m_z += 0.01 * event->delta();
+    update();
+}
+
+void MainWindow::timerEvent(QTimerEvent *event)
+{
+    for (int i = 0; i < m_objects.size(); ++i) {
+        if (i % 2 == 0) {
+            m_objects[i]->rotate(QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, qSin(angleObject)));
+            m_objects[i]->rotate(QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 0.0f, qCos(angleObject)));
+        }
+        else {
+            m_objects[i]->rotate(QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 0.0f, qSin(angleObject)));
+            m_objects[i]->rotate(QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, qCos(angleObject)));
+        }
+    }
+
+    m_groups[0]->rotate(QQuaternion::fromAxisAndAngle(0.0f, 0.0f, 1.0f, qSin(angleGroup1)));
+    m_groups[0]->rotate(QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 1.0f, -qSin(angleGroup1)));
+
+    m_groups[1]->rotate(QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, qCos(angleGroup2)));
+    m_groups[1]->rotate(QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 1.0f, -qCos(angleGroup2)));
+
+    m_groups[2]->rotate(QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, qSin(angleMain)));
+    m_groups[2]->rotate(QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 0.0f, qCos(angleMain)));
+
+    angleObject += M_PI / 180.0f;
+    angleGroup1 += M_PI / 360;
+    angleGroup2 -= M_PI / 360;
+    angleMain += M_PI / 720;
+
+    update();
+}
+
 void MainWindow::initShaders()
 {
     if (!m_shaderProgramm.addShaderFromSourceFile(QOpenGLShader::Vertex, "://vshader.vsh"))
@@ -123,7 +183,7 @@ void MainWindow::initShaders()
     if (!m_shaderProgramm.addShaderFromSourceFile(QOpenGLShader::Fragment, "://fshader.fsh"))
         close();
 
-    if (m_shaderProgramm.link())
+    if (!m_shaderProgramm.link())
         close();
 
     if (!m_shaderProgramm.bind())
@@ -193,52 +253,6 @@ void MainWindow::initCube(float width)
         indexes.append(i + 3);
     }
 
-    // Create and fill vertex buffer and then -> release
-    m_vertexBuffer.create();
-    m_vertexBuffer.bind();
-    m_vertexBuffer.allocate(vertexes.constData(), vertexes.size() * sizeof(VertexData));
-    m_vertexBuffer.release();
-
-    // Create and fill index buffer and then -> release
-    m_indexBuffer.create();
-    m_indexBuffer.bind();
-    m_indexBuffer.allocate(indexes.constData(), indexes.size() * sizeof(GLuint));
-    m_indexBuffer.release();
-
-    m_texture = new QOpenGLTexture(QImage("://cube.jpg").mirrored());
-    m_texture->setMinificationFilter(QOpenGLTexture::Nearest);
-    m_texture->setMagnificationFilter(QOpenGLTexture::Linear);
-    m_texture->setWrapMode(QOpenGLTexture::Repeat);
+    m_objects.append(new SimpleObject3D(vertexes, indexes, QImage("://cube.jpg")));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -24,12 +24,23 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    simpleobject3d.cpp \
+    group3d.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    simpleobject3d.h \
+    transformational.h \
+    group3d.h
 
-LIBS += -lopengl32
+win32-g* {
+    LIBS += -lopengl32
+}
+
+win32-msvc* {
+    LIBS += -lopengl32.lib
+}
 
 RESOURCES += \
     shaders.qrc \

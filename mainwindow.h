@@ -7,20 +7,12 @@
 #include <QOpenGLTexture>
 #include <QOpenGLBuffer>
 
-struct VertexData {
-    VertexData()
-    {
-    }
+#include <QBasicTimer>
 
-    VertexData(QVector3D p, QVector2D t, QVector3D n) :
-        position(p), texCoord(t), normal(n)
-    {
-    }
 
-    QVector3D position;
-    QVector2D texCoord;
-    QVector3D normal;
-};
+class SimpleObject3D;
+class Transformational;
+class Group3D;
 
 class MainWindow : public QOpenGLWidget
 {
@@ -38,22 +30,32 @@ protected:
     void closeEvent(QCloseEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void timerEvent(QTimerEvent *event) override;
 
     void initShaders();
     void initCube(float width);
 
 private:
+    // Camera position z
+    float m_z;
+
     QMatrix4x4 m_projectionMatrix;
     QOpenGLShaderProgram m_shaderProgramm;
-    QOpenGLTexture *m_texture;
-
-    QOpenGLBuffer m_vertexBuffer;
-    QOpenGLBuffer m_indexBuffer;
 
     QVector2D m_mousePosition;
     QQuaternion m_rotation;
 
-    int counter = 0;
+    QVector<SimpleObject3D*> m_objects;
+    QVector<Group3D*> m_groups;
+    QVector<Transformational*> m_transformObjects;
+
+    // Animation
+    QBasicTimer m_timer;
+    float angleObject;
+    float angleGroup1;
+    float angleGroup2;
+    float angleMain;
 };
 
 #endif // MAINWINDOW_H
