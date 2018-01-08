@@ -36,7 +36,7 @@ SimpleObject3D::~SimpleObject3D()
 
 }
 
-void SimpleObject3D::draw(QOpenGLShaderProgram *shaderProgramm, QOpenGLFunctions *functions)
+void SimpleObject3D::draw(QOpenGLShaderProgram *shaderProgram, QOpenGLFunctions *functions)
 {
     QMatrix4x4 modelMatrix;
     modelMatrix.setToIdentity();
@@ -50,10 +50,10 @@ void SimpleObject3D::draw(QOpenGLShaderProgram *shaderProgramm, QOpenGLFunctions
 
     // Bind texture
     m_texture->bind(0);
-    shaderProgramm->setUniformValue("u_texture", 0);
+    shaderProgram->setUniformValue("u_texture", 0);
 
     // Set uniform values
-    shaderProgramm->setUniformValue("u_modelMatrix", modelMatrix);
+    shaderProgram->setUniformValue("u_modelMatrix", modelMatrix);
 
     // Bind buffers
     m_vertexBuffer.bind();
@@ -62,23 +62,23 @@ void SimpleObject3D::draw(QOpenGLShaderProgram *shaderProgramm, QOpenGLFunctions
     int offset = 0;
 
     // Set varying attribute "a_position"
-    int location = shaderProgramm->attributeLocation("a_position");
-    shaderProgramm->enableAttributeArray(location);
-    shaderProgramm->setAttributeBuffer(location, GL_FLOAT, offset, 3, sizeof(VertexData));
+    int location = shaderProgram->attributeLocation("a_position");
+    shaderProgram->enableAttributeArray(location);
+    shaderProgram->setAttributeBuffer(location, GL_FLOAT, offset, 3, sizeof(VertexData));
 
 
     offset += sizeof(QVector3D);
     // Set varying attribute "a_textCoord"
-    location = shaderProgramm->attributeLocation("a_textCoord");
-    shaderProgramm->enableAttributeArray(location);
-    shaderProgramm->setAttributeBuffer(location, GL_FLOAT, offset, 2, sizeof(VertexData));
+    location = shaderProgram->attributeLocation("a_textCoord");
+    shaderProgram->enableAttributeArray(location);
+    shaderProgram->setAttributeBuffer(location, GL_FLOAT, offset, 2, sizeof(VertexData));
 
 
     offset += sizeof(QVector2D);
     // Set varying attribute "a_normal"
-    location = shaderProgramm->attributeLocation("a_normal");
-    shaderProgramm->enableAttributeArray(location);
-    shaderProgramm->setAttributeBuffer(location, GL_FLOAT, offset, 3, sizeof(VertexData));
+    location = shaderProgram->attributeLocation("a_normal");
+    shaderProgram->enableAttributeArray(location);
+    shaderProgram->setAttributeBuffer(location, GL_FLOAT, offset, 3, sizeof(VertexData));
 
     // Draw
     functions->glDrawElements(GL_TRIANGLES, m_indexBuffer.size(), GL_UNSIGNED_INT, 0);

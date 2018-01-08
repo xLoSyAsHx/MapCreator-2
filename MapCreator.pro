@@ -26,13 +26,15 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     simpleobject3d.cpp \
-    group3d.cpp
+    group3d.cpp \
+    camera3d.cpp
 
 HEADERS += \
         mainwindow.h \
     simpleobject3d.h \
     transformational.h \
-    group3d.h
+    group3d.h \
+    camera3d.h
 
 win32-g* {
     LIBS += -lopengl32

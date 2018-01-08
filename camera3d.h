@@ -1,5 +1,5 @@
-#ifndef GROUP3D_H
-#define GROUP3D_H
+#ifndef CAMERA3D_H
+#define CAMERA3D_H
 
 #include <QVector>
 #include <QQuaternion>
@@ -8,10 +8,10 @@
 
 #include "transformational.h"
 
-class Group3D: public Transformational
+class Camera3D : public Transformational
 {
 public:
-    Group3D();
+    Camera3D();
 
     // Transformational interface
 public:
@@ -19,10 +19,8 @@ public:
     void translate(const QVector3D &translation) override;
     void scale(const float scaleKoef) override;
     void setGlobalTransform(const QMatrix4x4 &matrix) override;
-    void draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions) override;
+    void draw(class QOpenGLShaderProgram *program, class QOpenGLFunctions *functions = nullptr) override;
     // End Transformational interface
-
-    void addObject(Transformational *obj);
 
 
 private:
@@ -31,11 +29,11 @@ private:
     float m_scale;
     QMatrix4x4 m_globalTransform;
 
-    QVector<Transformational*> m_objects;
+    QMatrix4x4 m_viewMatrix;
 
 
 
-    void m_formAndSetGlobalTransformForObjects(int pos = -1);
+    void m_resetViewMatrix();
 };
 
-#endif // GROUP3D_H
+#endif // CAMERA3D_H
