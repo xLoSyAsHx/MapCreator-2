@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>cube.jpg</file>
+        <file>skybox.jpg</file>
     </qresource>
 </RCC>

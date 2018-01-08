@@ -11,6 +11,7 @@
 #include "group3d.h"
 
 #include "camera3d.h"
+#include "skybox.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QOpenGLWidget(parent)
@@ -50,7 +51,7 @@ void MainWindow::initializeGL()
 
     // Group 1
     m_groups.append(new Group3D);
-    m_groups[0]->addObject(m_camera);
+    //m_groups[0]->addObject(m_camera);
     for (float x = -width; x <= width; x += step) {
 
         for (float y = -height; y <= height; y += step) {
@@ -86,7 +87,9 @@ void MainWindow::initializeGL()
 
     m_transformObjects.append(m_groups.last());
 
-    m_timer.start(30, this);
+    m_skybox = new SkyBox(1000.0f, QImage(":/skybox.jpg"));
+
+    //m_timer.start(30, this);
 }
 
 void MainWindow::resizeGL(int w, int h)
@@ -94,13 +97,27 @@ void MainWindow::resizeGL(int w, int h)
     float aspect = w / qreal(h ? h : 1);
 
     m_projectionMatrix.setToIdentity();
-    m_projectionMatrix.perspective(45, aspect, 0.01f, 100.0f);
+    m_projectionMatrix.perspective(45, aspect, 0.01f, 2000.0f);
 }
 
 void MainWindow::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
+    // Draw Skybox
+    m_shaderProgramSkyBox.bind();
+    // Set uniform values
+    m_shaderProgramSkyBox.setUniformValue("u_projectionMatrix", m_projectionMatrix);
+
+    m_camera->draw(&m_shaderProgramSkyBox);
+    m_skybox->draw(&m_shaderProgramSkyBox, context()->functions());
+
+    m_shaderProgramSkyBox.release();
+
+
+    // Draw objects
+    m_shaderProgram.bind();
     // Set uniform values
     m_shaderProgram.setUniformValue("u_projectionMatrix", m_projectionMatrix);
     m_shaderProgram.setUniformValue("u_lightPosition", QVector4D(0.0, 0.0, 0.0, 1.0));
@@ -109,6 +126,8 @@ void MainWindow::paintGL()
     m_camera->draw(&m_shaderProgram);
     for (auto it = m_transformObjects.cbegin(); it != m_transformObjects.cend(); ++it)
         (*it)->draw(&m_shaderProgram, context()->functions());
+
+    m_shaderProgram.release();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -155,6 +174,8 @@ void MainWindow::wheelEvent(QWheelEvent *event)
 
 void MainWindow::timerEvent(QTimerEvent *event)
 {
+    Q_UNUSED(event)
+
     for (int i = 0; i < m_objects.size(); ++i) {
         if (i % 2 == 0) {
             m_objects[i]->rotate(QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, qSin(angleObject)));
@@ -185,18 +206,37 @@ void MainWindow::timerEvent(QTimerEvent *event)
 
 void MainWindow::initShaders()
 {
-    if (!m_shaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, "://vshader.vsh"))
+    if (!m_shaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, "://vshader.vsh")) {
+        QMessageBox::about(this, "Error", "Can't add shader from source file 'vshader.vsh'");
         close();
+    }
 
-    if (!m_shaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, "://fshader.fsh"))
+    if (!m_shaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, "://fshader.fsh")) {
+        QMessageBox::about(this, "Error", "Can't add shader from source file 'fshader.fsh'");
         close();
+    }
 
-    if (!m_shaderProgram.link())
+    if (!m_shaderProgram.link()) {
+        QMessageBox::about(this, "Error", "Can't link shader program");
         close();
+    }
 
-    if (!m_shaderProgram.bind())
+
+    // Skybox shaders
+    if (!m_shaderProgramSkyBox.addShaderFromSourceFile(QOpenGLShader::Vertex, "://skybox.vsh")) {
+        QMessageBox::about(this, "Error", "Can't add shader from source file 'skybox.vsh'");
         close();
+    }
 
+    if (!m_shaderProgramSkyBox.addShaderFromSourceFile(QOpenGLShader::Fragment, "://skybox.fsh")) {
+        QMessageBox::about(this, "Error", "Can't add shader from source file 'skybox.fsh'");
+        close();
+    }
+
+    if (!m_shaderProgramSkyBox.link()) {
+        QMessageBox::about(this, "Error", "Can't link shader program");
+        close();
+    }
 }
 
 void MainWindow::initCube(float width)

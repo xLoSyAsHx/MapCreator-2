@@ -14,6 +14,7 @@ class SimpleObject3D;
 class Transformational;
 class Group3D;
 class Camera3D;
+class SkyBox;
 
 class MainWindow : public QOpenGLWidget
 {
@@ -38,11 +39,12 @@ protected:
     void initCube(float width);
 
 private:
-    // Camera
     Camera3D *m_camera;
+    SkyBox *m_skybox;
 
     QMatrix4x4 m_projectionMatrix;
     QOpenGLShaderProgram m_shaderProgram;
+    QOpenGLShaderProgram m_shaderProgramSkyBox;
 
     QVector2D m_mousePosition;
 
