@@ -28,7 +28,8 @@ SOURCES += \
     simpleobject3d.cpp \
     group3d.cpp \
     camera3d.cpp \
-    skybox.cpp
+    skybox.cpp \
+    test.cpp
 
 HEADERS += \
         mainwindow.h \
