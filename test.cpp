@@ -5,9 +5,9 @@
 #include <QString>
 #include <QMatrix4x4>
 
-#include  "External/assimp-3.3.1/include/assimp/scene.h"
-#include "External/assimp-3.3.1/include/assimp/Importer.hpp"
-#include "External/assimp-3.3.1/include/assimp/postprocess.h"
+#include<External/assimp/Importer.hpp>
+#include <External/assimp/scene.h>
+#include <External/assimp/postprocess.h>
 
 
 
@@ -67,13 +67,12 @@ public:
     bool LoadFromFBX(QString path) {
         Assimp::Importer importer;
 
-        const aiScene *scene = Assimp::Importer::ReadFile(path.toStdString(),
+        const aiScene *scene = importer.ReadFile(path.toStdString(),
                                                    aiProcess_GenSmoothNormals |
                                                    aiProcess_CalcTangentSpace |
                                                    aiProcess_Triangulate |
                                                    aiProcess_JoinIdenticalVertices |
-                                                   aiProcess_SortByPType
-                                                   );
+                                                   aiProcess_SortByPType);
 
         if (scene != nullptr) {
             qDebug() << "Error loading file: (assimp:) " << importer.GetErrorString();
@@ -116,7 +115,7 @@ public:
         return true;
     }
 
-    void processMaterial(aiMaterial *material) {
+    QSharedPointer<MaterialInfo> processMaterial(aiMaterial *material) {
         QSharedPointer<MaterialInfo> newMaterial(new MaterialInfo);
 
         aiString mname;
@@ -157,7 +156,7 @@ public:
         return newMaterial;
     }
 
-    void processMesh(aiMesh *mesh) {
+    QSharedPointer<Mesh> processMesh(aiMesh *mesh) {
         QSharedPointer<Mesh> newMesh(new Mesh);
 
         newMesh->name = mesh->mName.length != 0 ? mesh->mName.C_Str() : "";
@@ -230,7 +229,7 @@ public:
             processNode(scene, node->mChildren[ich], parentNode, newNode.nodes[ich]);
         }
     }
-}
+};
 
 
 #endif

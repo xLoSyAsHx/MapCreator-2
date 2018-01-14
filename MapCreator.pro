@@ -45,8 +45,12 @@ win32-g* {
 
 win32-msvc* {
     LIBS += -lopengl32.lib
+
 }
 
 RESOURCES += \
     shaders.qrc \
-    textures.qrc
+    textures.qrc \
+    models.qrc
+
+
