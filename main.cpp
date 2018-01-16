@@ -13,10 +13,9 @@ int main(int argc, char *argv[])
     format.setBlueBufferSize(24);
     QSurfaceFormat::setDefaultFormat(format);
 
-
     Test test;
 
-    test.LoadFromFBX("://9v.fbx");
+    test.LoadFromFBX("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
 
     MainWindow w;
     w.show();

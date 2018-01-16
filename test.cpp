@@ -5,9 +5,9 @@
 #include <QString>
 #include <QMatrix4x4>
 
-#include<External/assimp/Importer.hpp>
-#include <External/assimp/scene.h>
-#include <External/assimp/postprocess.h>
+#include <External/assimp/include/assimp/Importer.hpp>
+#include <External/assimp/include/assimp/scene.h>
+#include <External/assimp/include/assimp/postprocess.h>
 
 
 
@@ -67,14 +67,15 @@ public:
     bool LoadFromFBX(QString path) {
         Assimp::Importer importer;
 
-        const aiScene *scene = importer.ReadFile(path.toStdString(),
+        std::string str = path.toStdString();
+        const aiScene *scene = importer.ReadFile(str.c_str(),
                                                    aiProcess_GenSmoothNormals |
                                                    aiProcess_CalcTangentSpace |
                                                    aiProcess_Triangulate |
                                                    aiProcess_JoinIdenticalVertices |
                                                    aiProcess_SortByPType);
 
-        if (scene != nullptr) {
+        if (scene == nullptr) {
             qDebug() << "Error loading file: (assimp:) " << importer.GetErrorString();
             return false;
         }
@@ -90,7 +91,7 @@ public:
 
         // Process meshes
         if (scene->HasMeshes()) {
-            for (int i = 0; i < scene->mNumMeshes; ++i) {
+            for (uint i = 0; i < scene->mNumMeshes; ++i) {
                 m_meshes.append(processMesh(scene->mMeshes[i]));
             }
         }
@@ -124,7 +125,9 @@ public:
            newMaterial->Name = mname.C_Str();
 
         int shadingModel;
-        material->Get(AI_MATKEY_SHADING_MODEL, shadingModel);
+        aiReturn ret = material->Get(AI_MATKEY_SHADING_MODEL, shadingModel);
+        if (ret != AI_SUCCESS)
+            qDebug() << "can't get material";
 
         if (shadingModel != aiShadingMode_Phong)// && shadingModel != aiShadingMode_Gouraud)
         {
@@ -133,9 +136,9 @@ public:
         }
         else
         {
-            aiColor3D dif(0.f,0.f,0.f);
-            aiColor3D amb(0.f,0.f,0.f);
-            aiColor3D spec(0.f,0.f,0.f);
+            aiColor3D  dif(0.0f,0.0f,0.0f);
+            aiColor3D  amb(0.0f,0.0f,0.0f);
+            aiColor3D spec(0.0f,0.0f,0.0f);
             float shine = 0.0;
 
             material->Get(AI_MATKEY_COLOR_AMBIENT, amb);
@@ -148,7 +151,7 @@ public:
             newMaterial->Specular = QVector3D(spec.r, spec.g, spec.b);
             newMaterial->Shininess = shine;
 
-            newMaterial->Ambient *= .2;
+            newMaterial->Ambient *= 0.2f;
             if (newMaterial->Shininess == 0.0)
                 newMaterial->Shininess = 30;
         }

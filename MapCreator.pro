@@ -39,14 +39,15 @@ HEADERS += \
     camera3d.h \
     skybox.h
 
+
 win32-g* {
     LIBS += -lopengl32
 }
 
 win32-msvc* {
-    LIBS += -lopengl32.lib
-
+    LIBS += opengl32.lib
 }
+
 
 RESOURCES += \
     shaders.qrc \
@@ -54,3 +55,7 @@ RESOURCES += \
     models.qrc
 
 
+win32: LIBS += -L$$PWD/External/assimp/ -lassimp
+
+INCLUDEPATH += $$PWD/External/assimp/include
+DEPENDPATH += $$PWD/External/assimp/include
