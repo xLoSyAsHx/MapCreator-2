@@ -90,6 +90,8 @@ void MainWindow::initializeGL()
     m_skybox = new SkyBox(1000.0f, QImage(":/skybox.jpg"));
 
     //m_timer.start(30, this);
+    m_model3dTest = ModelLoader::loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
+    qDebug() << "asd";
 }
 
 void MainWindow::resizeGL(int w, int h)
@@ -128,6 +130,10 @@ void MainWindow::paintGL()
         (*it)->draw(&m_shaderProgram, context()->functions());
 
     m_shaderProgram.release();
+
+
+
+    m_model3dTest->draw(&m_shaderProgram, context()->functions());
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

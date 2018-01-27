@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include <QApplication>
 
-#include "test.cpp"
+#include "ModelLoader.h"
 
 
 int main(int argc, char *argv[])
@@ -13,9 +13,7 @@ int main(int argc, char *argv[])
     format.setBlueBufferSize(24);
     QSurfaceFormat::setDefaultFormat(format);
 
-    Test test;
-
-    test.LoadFromFBX("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
+    //Model3D* model = ModelLoader::loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
 
     MainWindow w;
     w.show();

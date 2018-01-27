@@ -29,7 +29,9 @@ SOURCES += \
     group3d.cpp \
     camera3d.cpp \
     skybox.cpp \
-    test.cpp
+    test.cpp \
+    Model3D.cpp \
+    ModelLoader.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -37,7 +39,9 @@ HEADERS += \
     transformational.h \
     group3d.h \
     camera3d.h \
-    skybox.h
+    skybox.h \
+    Model3D.h \
+    ModelLoader.h
 
 
 win32-g* {
