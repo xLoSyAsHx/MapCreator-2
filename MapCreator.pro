@@ -30,8 +30,16 @@ SOURCES += \
     camera3d.cpp \
     skybox.cpp \
     test.cpp \
-    Model3D.cpp \
-    ModelLoader.cpp
+    model3d_2.cpp \
+    mesh.cpp \
+    vertexdata.cpp \
+    Model3D/mesh.cpp \
+    Model3D/model3d_2.cpp \
+    Model3D/vertexdata.cpp \
+    Model3D/material.cpp \
+    Model3D/node.cpp \
+    ModelLoader.cpp \
+    Model3D/bone.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -40,8 +48,15 @@ HEADERS += \
     group3d.h \
     camera3d.h \
     skybox.h \
-    Model3D.h \
-    ModelLoader.h
+    mesh.h \
+    vertexdata.h \
+    Model3D/mesh.h \
+    Model3D/model3d_2.h \
+    Model3D/vertexdata.h \
+    Model3D/material.h \
+    Model3D/node.h \
+    ModelLoader.h \
+    Model3D/bone.h
 
 
 win32-g* {
