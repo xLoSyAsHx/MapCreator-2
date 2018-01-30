@@ -1,7 +1,7 @@
 #include "model3d_3.h"
 
 
-bool Model3D_3::LoadMesh(const QString &filename)
+bool Model3D_3::loadMesh(const QString &filename)
 {
     // Release the previously loaded mesh (if it exists)
     Clear();
@@ -24,21 +24,28 @@ bool Model3D_3::LoadMesh(const QString &filename)
     return Ret;
 }
 
-bool Model3D_3::InitFromScene(const aiScene *pScene, const std::string &Filename)
+void Model3D_3::initFromScene(const aiScene *pScene, const std::string &filename)
 {
     m_Entries.resize(pScene->mNumMeshes);
-    m_Textures.resize(pScene->mNumMaterials);
+    m_materials.resize(pScene->mNumMaterials);
 
     // Initialize the meshes in the scene one by one
-    for (unsigned int i = 0 ; i < m_Entries.size() ; i++) {
+    for (uint i = 0 ; i < m_Entries.size() ; ++i) {
         const aiMesh* paiMesh = pScene->mMeshes[i];
-        InitMesh(i, paiMesh);
+        initMesh(i, paiMesh);
     }
 
-    return InitMaterials(pScene, Filename);
+    // Initialize materials
+    if (pScene->HasMaterials()) {
+        for (uint i = 0; i < pScene->mNumMaterials; ++i)
+        {
+            QSharedPointer<Material> material = initMaterial(pScene->mMaterials[i]);
+            m_materials.append(material);
+        }
+    }
 }
 
-void Model3D_3::InitMesh(unsigned int Index, const aiMesh *paiMesh)
+void Model3D_3::initMesh(unsigned int Index, const aiMesh *paiMesh)
 {
     m_Entries[Index].MaterialIndex = paiMesh->mMaterialIndex;
 
@@ -66,6 +73,38 @@ void Model3D_3::InitMesh(unsigned int Index, const aiMesh *paiMesh)
         }
 
         m_Entries[Index].Init(Vertices, Indices);
+}
+
+QSharedPointer<Material> Model3D_3::initMaterial(const aiMaterial* material)
+{
+    QSharedPointer<Material> newMaterial(new Material);
+
+    aiString mname;
+    material->Get(AI_MATKEY_NAME, mname);
+    if (mname.length > 0)
+        newMaterial->Name = mname.C_Str();
+
+
+    aiColor3D dif(0.f, 0.f, 0.f);
+    aiColor3D amb(0.f, 0.f, 0.f);
+    aiColor3D spec(0.f, 0.f, 0.f);
+    float shine = 0.0;
+
+    material->Get(AI_MATKEY_COLOR_AMBIENT, amb);
+    material->Get(AI_MATKEY_COLOR_DIFFUSE, dif);
+    material->Get(AI_MATKEY_COLOR_SPECULAR, spec);
+    material->Get(AI_MATKEY_SHININESS, shine);
+
+    newMaterial->Ambient = QVector3D{ amb.r, amb.g, amb.b };
+    newMaterial->Diffuse = QVector3D{ dif.r, dif.g, dif.b };
+    newMaterial->Specular = QVector3D{ spec.r, spec.g, spec.b };
+    newMaterial->Shininess = shine;
+
+    //newMaterial->Ambient *= .2;
+    if (newMaterial->Shininess == 0.0)
+        newMaterial->Shininess = 30;
+
+
 }
 
 bool Model3D_3::MeshEntry::Init(const QVector<VertexData> &vertices, QVector<uint> &indices)

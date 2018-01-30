@@ -29,12 +29,12 @@ class Model3D_3
 public:
     Model3D_3();
 
-    bool LoadMesh(const QString& filename);
+    bool loadMesh(const QString& filename);
 
 private:
-    bool InitFromScene(const aiScene* pScene, const std::string& filename);
-    void InitMesh(unsigned int Index, const aiMesh* paiMesh);
-    bool InitMaterials(const aiScene* pScene, const std::string& filename);
+    void initFromScene(const aiScene* pScene, const std::string& filename);
+    void initMesh(unsigned int Index, const aiMesh* paiMesh);
+    QSharedPointer<Material> initMaterial(const aiMaterial* material);
     void Clear();
 
 
@@ -58,7 +58,7 @@ private:
         };
 
         QVector<MeshEntry> m_Entries;
-        QVector<Texture*> m_Textures;
+        QVector<QSharedPointer<Material>> m_materials;
 
 };
 
