@@ -15,7 +15,7 @@ bool Model3D_3::loadMesh(const QString &filename)
                                               aiProcess_FlipUVs);
 
     if (pScene) {
-        Ret = InitFromScene(pScene, filename);
+        Ret = initFromScene(pScene, filename);
     }
     else {
         qDebug() << "Error loading file: (assimp:) " << importer.GetErrorString();
@@ -104,7 +104,17 @@ QSharedPointer<Material> Model3D_3::initMaterial(const aiMaterial* material)
     if (newMaterial->Shininess == 0.0)
         newMaterial->Shininess = 30;
 
+    int texIndex = 0;
+    aiString path;	// filename
 
+    aiReturn texFound = material->GetTexture(aiTextureType_DIFFUSE, texIndex, &path);
+    while (texFound == AI_SUCCESS) {
+        newMaterial->addTexture(aiTextureType, QImage(path.data));
+
+        // Has more textures?
+        texIndex++;
+        texFound = material->GetTexture(aiTextureType_DIFFUSE, texIndex, &path);
+    }
 }
 
 bool Model3D_3::MeshEntry::Init(const QVector<VertexData> &vertices, QVector<uint> &indices)
