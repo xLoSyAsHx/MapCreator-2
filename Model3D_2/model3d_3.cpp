@@ -95,6 +95,9 @@ QSharedPointer<Material> Model3D_3::initMaterial(const aiMaterial* material)
     material->Get(AI_MATKEY_COLOR_SPECULAR, spec);
     material->Get(AI_MATKEY_SHININESS, shine);
 
+
+
+
     newMaterial->Ambient = QVector3D{ amb.r, amb.g, amb.b };
     newMaterial->Diffuse = QVector3D{ dif.r, dif.g, dif.b };
     newMaterial->Specular = QVector3D{ spec.r, spec.g, spec.b };

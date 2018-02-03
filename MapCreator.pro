@@ -85,7 +85,8 @@ SOURCES += \
     simpleobject3d.cpp \
     skybox.cpp \
     test.cpp \
-    Model3D_2/model3d_3.cpp
+    Model3D_2/model3d_3.cpp \
+    Model3D_4/model3d_4.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -217,7 +218,9 @@ HEADERS += \
     simpleobject3d.h \
     skybox.h \
     transformational.h \
-    Model3D_2/model3d_3.h
+    Model3D_2/model3d_3.h \
+    Model3D_4/model3d_4.h \
+    assimp_adapter.h
 
 
 win32-g* {
