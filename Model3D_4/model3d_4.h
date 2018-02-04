@@ -47,10 +47,9 @@ private:
     void clear();
 
     void recursiveInitMeshesMaterialsTransforms(
-            const aiNode *pNode, QMatrix4x4 transformMatrix) const;
-    void initFromScene(aiScene *pScene);
-
-    void recursiveProcessAiMeshes(const aiNode *pNode);
+            aiMesh **pMeshes,
+            const aiNode *pNode, QMatrix4x4 transformMatrix);
+    bool initFromScene(const aiScene *pScene);
 
     void addVertexDatas(const aiMesh* const pMesh,
                             QVector<VertexData> &vertexDatas,
@@ -61,8 +60,8 @@ private:
                     uint &indexes_LastIndex);
 
     struct VectorsForShader {
-        VectorsForShader(const aiMesh** const meshes, uint size)
-            : VertexData_LastIndex(0), Indexes_LastIndex(0)
+        VectorsForShader(aiMesh** meshes, uint size)
+            : Meshes(meshes), VertexData_LastIndex(0), Indexes_LastIndex(0)
         {
             uint totalVertexes = 0;
             uint totalFaces = 0;
@@ -83,6 +82,8 @@ private:
 
         QVector<uint> Indexes;
         uint Indexes_LastIndex;
+
+        aiMesh** Meshes;
     };
 
     void recursiveProcessAiNodes(

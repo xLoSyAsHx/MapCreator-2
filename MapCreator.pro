@@ -21,134 +21,36 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-
 SOURCES += \
-        main.cpp \
-        mainwindow.cpp \
-    simpleobject3d.cpp \
     group3d.cpp \
     camera3d.cpp \
-    skybox.cpp \
-    test.cpp \
-    model3d_2.cpp \
-    mesh.cpp \
-    vertexdata.cpp \
-    Model3D/mesh.cpp \
-    Model3D/model3d_2.cpp \
-    Model3D/vertexdata.cpp \
-    Model3D/material.cpp \
-    Model3D/node.cpp \
-    ModelLoader.cpp \
-    Model3D/bone.cpp \
-    Model3D/bone.cpp \
-    Model3D/material.cpp \
-    Model3D/mesh.cpp \
-    Model3D/model3d_2.cpp \
-    Model3D/node.cpp \
-    Model3D/vertexdata.cpp \
-    camera3d.cpp \
-    group3d.cpp \
     main.cpp \
     mainwindow.cpp \
-    Model3D.cpp \
-    ModelLoader.cpp \
     simpleobject3d.cpp \
-    skybox.cpp \
-    test.cpp \
     Model3D/bone.cpp \
     Model3D/material.cpp \
     Model3D/mesh.cpp \
-    Model3D/model3d_2.cpp \
     Model3D/node.cpp \
     Model3D/vertexdata.cpp \
-    camera3d.cpp \
-    group3d.cpp \
-    main.cpp \
-    mainwindow.cpp \
-    Model3D.cpp \
-    ModelLoader.cpp \
-    simpleobject3d.cpp \
     skybox.cpp \
     test.cpp \
-    Model3D/bone.cpp \
-    Model3D/material.cpp \
-    Model3D/mesh.cpp \
-    Model3D/model3d_2.cpp \
-    Model3D/node.cpp \
-    Model3D/vertexdata.cpp \
-    camera3d.cpp \
-    group3d.cpp \
-    main.cpp \
-    mainwindow.cpp \
-    Model3D.cpp \
-    ModelLoader.cpp \
-    simpleobject3d.cpp \
-    skybox.cpp \
-    test.cpp \
-    Model3D_2/model3d_3.cpp \
     Model3D_4/model3d_4.cpp
 
 HEADERS += \
-        mainwindow.h \
-    simpleobject3d.h \
-    transformational.h \
-    group3d.h \
-    camera3d.h \
-    skybox.h \
-    mesh.h \
-    vertexdata.h \
-    Model3D/mesh.h \
-    Model3D/model3d_2.h \
-    Model3D/vertexdata.h \
     Model3D/material.h \
-    Model3D/node.h \
-    ModelLoader.h \
     Model3D/bone.h \
-    Model3D/bone.h \
-    Model3D/material.h \
     Model3D/mesh.h \
-    Model3D/model3d_2.h \
     Model3D/node.h \
     Model3D/vertexdata.h \
     camera3d.h \
     group3d.h \
     mainwindow.h \
-    Model3D.h \
-    ModelLoader.h \
     simpleobject3d.h \
     skybox.h \
     transformational.h \
-    Model3D/bone.h \
-    Model3D/material.h \
-    Model3D/mesh.h \
-    Model3D/model3d_2.h \
-    Model3D/node.h \
-    Model3D/vertexdata.h \
-    camera3d.h \
-    group3d.h \
-    mainwindow.h \
-    Model3D.h \
-    ModelLoader.h \
-    simpleobject3d.h \
-    skybox.h \
-    transformational.h \
-    Model3D/bone.h \
-    Model3D/material.h \
-    Model3D/mesh.h \
-    Model3D/model3d_2.h \
-    Model3D/node.h \
-    Model3D/vertexdata.h \
-    camera3d.h \
-    group3d.h \
-    mainwindow.h \
-    Model3D.h \
-    ModelLoader.h \
-    simpleobject3d.h \
-    skybox.h \
-    transformational.h \
-    Model3D_2/model3d_3.h \
     Model3D_4/model3d_4.h \
     assimp_adapter.h
+
 
 
 win32-g* {

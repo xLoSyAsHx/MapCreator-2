@@ -10,7 +10,7 @@ varying vec4 v_position;
 void main(void)
 {
     vec4 resultColor = vec4(0.0, 0.0, 0.0, 0.0);
-    vec4 diffMatColor = texture2D(u_texture, v_textCoord);
+    vec4 diffMatColor = vec4(1.0, 0.0, 0.0, 1.0);//texture2D(u_texture, v_textCoord);
     vec4 eyePosition = vec4(0.0, 0.0, 0.0, 1.0);
 
     // eyeVect = v_position (point position)  - vec4(0.0, 0.0, 0.0, 0.0) (viewer position)

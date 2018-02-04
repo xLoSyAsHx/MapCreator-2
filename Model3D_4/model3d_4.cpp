@@ -1,5 +1,7 @@
 #include "model3d_4.h"
 
+#include "assimp_adapter.h"
+
 Model3D_4::Model3D_4()
 {
 
@@ -106,13 +108,14 @@ void Model3D_4::clear()
 }
 
 void Model3D_4::recursiveInitMeshesMaterialsTransforms(
-        const aiNode *pNode, QMatrix4x4 transformMatrix) const
+        aiMesh **pMeshes,
+        const aiNode *pNode, QMatrix4x4 transformMatrix)
 {
     m_transformMatrixes.push_back(transformMatrix);
 
     for (int i = 0; i < pNode->mNumChildren; ++i) {
         for (int j = 0; j < pNode->mNumMeshes; ++j) {
-            const aiMesh* pMesh = pNode->mMeshes[i];
+            const aiMesh* pMesh = pMeshes[pNode->mMeshes[i]];
             Mesh& mesh = m_meshes[i];
 
             mesh.BaseIndex = m_totalVertexes;
@@ -125,11 +128,12 @@ void Model3D_4::recursiveInitMeshesMaterialsTransforms(
         }
 
         recursiveInitMeshesMaterialsTransforms(
-                    pNode->mChildren[i], transformMatrix * pNode->mTransformation);
+                    pMeshes,
+                    pNode->mChildren[i], transformMatrix * toQMatrix4x4(pNode->mTransformation));
     }
 }
 
-void Model3D_4::initFromScene(aiScene *pScene)
+bool Model3D_4::initFromScene(const aiScene *pScene)
 {
     clear();
 
@@ -141,7 +145,8 @@ void Model3D_4::initFromScene(aiScene *pScene)
     m_transformMatrixes.resize(0);
 
     recursiveInitMeshesMaterialsTransforms(
-                pScene->mRootNode, pScene->mRootNode->mTransformation);
+                pScene->mMeshes,
+                pScene->mRootNode, toQMatrix4x4(pScene->mRootNode->mTransformation));
 
     // Vectors of vertex data
     QVector<VertexData> vertexesData;
@@ -151,7 +156,7 @@ void Model3D_4::initFromScene(aiScene *pScene)
     // Init meshes through node hierarchy
     VectorsForShader vectors(pScene->mMeshes, pScene->mNumMeshes);
     recursiveProcessAiNodes(pScene->mRootNode,
-                            pScene->mRootNode->mTransformation,
+                            toQMatrix4x4(pScene->mRootNode->mTransformation),
                             vectors);
 
     QOpenGLBuffer vertexDatasBuffer(QOpenGLBuffer::VertexBuffer);
@@ -171,25 +176,8 @@ void Model3D_4::initFromScene(aiScene *pScene)
                            vectors.VertexDatas.size() * sizeof(uint));
 
     m_VAO.release();
-}
 
-void Model3D_4::recursiveProcessAiMeshes(const aiNode *pNode)
-{
-    for (int i = 0; i < pNode->mNumChildren; ++i) {
-        for (int j = 0; j < pNode->mNumMeshes; ++j) {
-            const aiMesh* pMesh = pNode->mMeshes[i];
-            Mesh& mesh = m_meshes[i];
-
-            mesh.BaseIndex = m_totalVertexes;
-            mesh.NumVertexes = pMesh->mNumVertices;
-            mesh.MaterialIndex = pMesh->mMaterialIndex;
-            mesh.TransformMatrixIndex = m_transformMatrixes.size() - 1;
-
-            m_totalVertexes += mesh.NumVertexes;
-        }
-
-        recursiveProcessAiMeshes(pNode->mChildren[i]);
-    }
+    return true;
 }
 
 void Model3D_4::addVertexDatas(const aiMesh * const pMesh,
@@ -197,12 +185,13 @@ void Model3D_4::addVertexDatas(const aiMesh * const pMesh,
 {
     for (int i = 0; i < pMesh->mNumVertices; ++i) {
         QVector3D texCoords = pMesh->HasTextureCoords(i) ?
-                    *(pMesh->mTextureCoords[i]) : QVector3D(0, 0, 0);
+                    toQVector3D(*(pMesh->mTextureCoords[i])) : QVector3D(0, 0, 0);
+
 
         VertexData vd(
-                    *(pMesh->mVertices[i]),
+                    toQVector3D(pMesh->mVertices[i]),
                     texCoords.toVector2D(),
-                    *(pMesh->mNormals[i])
+                    toQVector3D(pMesh->mNormals[i])
                     );
 
         vertexDatas[vertexData_LastIndex++] = vd;
@@ -213,11 +202,11 @@ void Model3D_4::addIndexes(const aiMesh * const pMesh,
                            QVector<uint> &indexes, uint &indexes_LastIndex)
 {
     for (int k = 0; k < pMesh->mNumFaces; ++k) {
-        const aiFace* const pFace = pMesh->mFaces[k];
+        const aiFace& pFace = pMesh->mFaces[k];
 
-        indexes[indexes_LastIndex++] = pFace[0];
-        indexes[indexes_LastIndex++] = pFace[1];
-        indexes[indexes_LastIndex++] = pFace[2];
+        indexes[indexes_LastIndex++] = pFace.mIndices[0];
+        indexes[indexes_LastIndex++] = pFace.mIndices[1];
+        indexes[indexes_LastIndex++] = pFace.mIndices[2];
     }
 }
 
@@ -228,7 +217,7 @@ void Model3D_4::recursiveProcessAiNodes(
 
     for (int i = 0; i < pNode->mNumChildren; ++i) {
         for (int j = 0; j < pNode->mNumMeshes; ++j) {
-            const aiMesh* const pMesh = pNode->mMeshes[i];
+            const aiMesh* const pMesh =  vectors.Meshes[pNode->mMeshes[i]];
 
             // Init Mesh
             Mesh& mesh = m_meshes[j];
@@ -249,7 +238,7 @@ void Model3D_4::recursiveProcessAiNodes(
 
         recursiveProcessAiNodes(
                     pNode->mChildren[i],
-                    transformMatrix * pNode->mTransformation,
+                    transformMatrix * toQMatrix4x4(pNode->mTransformation),
                     vectors);
     }
 }

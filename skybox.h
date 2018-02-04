@@ -1,10 +1,10 @@
 #ifndef SKYBOX_H
 #define SKYBOX_H
 
+#include <QImage>
+
 #include "transformational.h"
 
-class SimpleObject3D;
-class QImage;
 
 class SkyBox : public Transformational
 {
@@ -21,7 +21,7 @@ public:
     // End Transformational interface
 
 private:
-    SimpleObject3D* m_cube;
+    class SimpleObject3D* m_cube;
 };
 
 #endif // SKYBOX_H

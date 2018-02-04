@@ -3,6 +3,7 @@
 
 
 #include <QVector3D>
+#include <QVector2D>
 
 struct VertexData {
     VertexData();
