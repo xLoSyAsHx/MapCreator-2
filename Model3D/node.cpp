@@ -1,4 +1,4 @@
-#include "node.h"
+#include "Model3D/node.h"
 
 
 #include <QMap>

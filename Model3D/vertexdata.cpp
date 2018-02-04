@@ -1,4 +1,4 @@
-#include "vertexdata.h"
+#include "Model3D/vertexdata.h"
 
 VertexData::VertexData()
 {

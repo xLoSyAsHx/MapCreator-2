@@ -1,4 +1,4 @@
-#include "bone.h"
+#include "Model3D/bone.h"
 
 Bone::Bone()
 {

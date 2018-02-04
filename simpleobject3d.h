@@ -7,7 +7,7 @@
 #include <QVector2D>
 
 #include "transformational.h"
-#include "vertexdata.h"
+#include "Model3D/vertexdata.h"
 
 
 class SimpleObject3D : public Transformational

@@ -1,4 +1,4 @@
-#include "mesh.h"
+#include "Model3D/mesh.h"
 
 #include <QMap>
 

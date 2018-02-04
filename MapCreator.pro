@@ -104,42 +104,6 @@ HEADERS += \
     Model3D/node.h \
     ModelLoader.h \
     Model3D/bone.h \
-    External/assimp/include/assimp/Compiler/poppack1.h \
-    External/assimp/include/assimp/Compiler/pstdint.h \
-    External/assimp/include/assimp/Compiler/pushpack1.h \
-    External/assimp/include/assimp/ai_assert.h \
-    External/assimp/include/assimp/anim.h \
-    External/assimp/include/assimp/camera.h \
-    External/assimp/include/assimp/cexport.h \
-    External/assimp/include/assimp/cfileio.h \
-    External/assimp/include/assimp/cimport.h \
-    External/assimp/include/assimp/color4.h \
-    External/assimp/include/assimp/config.h \
-    External/assimp/include/assimp/DefaultLogger.hpp \
-    External/assimp/include/assimp/defs.h \
-    External/assimp/include/assimp/Exporter.hpp \
-    External/assimp/include/assimp/Importer.hpp \
-    External/assimp/include/assimp/importerdesc.h \
-    External/assimp/include/assimp/IOStream.hpp \
-    External/assimp/include/assimp/IOSystem.hpp \
-    External/assimp/include/assimp/light.h \
-    External/assimp/include/assimp/Logger.hpp \
-    External/assimp/include/assimp/LogStream.hpp \
-    External/assimp/include/assimp/material.h \
-    External/assimp/include/assimp/matrix3x3.h \
-    External/assimp/include/assimp/matrix4x4.h \
-    External/assimp/include/assimp/mesh.h \
-    External/assimp/include/assimp/metadata.h \
-    External/assimp/include/assimp/NullLogger.hpp \
-    External/assimp/include/assimp/postprocess.h \
-    External/assimp/include/assimp/ProgressHandler.hpp \
-    External/assimp/include/assimp/quaternion.h \
-    External/assimp/include/assimp/scene.h \
-    External/assimp/include/assimp/texture.h \
-    External/assimp/include/assimp/types.h \
-    External/assimp/include/assimp/vector2.h \
-    External/assimp/include/assimp/vector3.h \
-    External/assimp/include/assimp/version.h \
     Model3D/bone.h \
     Model3D/material.h \
     Model3D/mesh.h \
@@ -154,42 +118,6 @@ HEADERS += \
     simpleobject3d.h \
     skybox.h \
     transformational.h \
-    External/assimp/include/assimp/Compiler/poppack1.h \
-    External/assimp/include/assimp/Compiler/pstdint.h \
-    External/assimp/include/assimp/Compiler/pushpack1.h \
-    External/assimp/include/assimp/ai_assert.h \
-    External/assimp/include/assimp/anim.h \
-    External/assimp/include/assimp/camera.h \
-    External/assimp/include/assimp/cexport.h \
-    External/assimp/include/assimp/cfileio.h \
-    External/assimp/include/assimp/cimport.h \
-    External/assimp/include/assimp/color4.h \
-    External/assimp/include/assimp/config.h \
-    External/assimp/include/assimp/DefaultLogger.hpp \
-    External/assimp/include/assimp/defs.h \
-    External/assimp/include/assimp/Exporter.hpp \
-    External/assimp/include/assimp/Importer.hpp \
-    External/assimp/include/assimp/importerdesc.h \
-    External/assimp/include/assimp/IOStream.hpp \
-    External/assimp/include/assimp/IOSystem.hpp \
-    External/assimp/include/assimp/light.h \
-    External/assimp/include/assimp/Logger.hpp \
-    External/assimp/include/assimp/LogStream.hpp \
-    External/assimp/include/assimp/material.h \
-    External/assimp/include/assimp/matrix3x3.h \
-    External/assimp/include/assimp/matrix4x4.h \
-    External/assimp/include/assimp/mesh.h \
-    External/assimp/include/assimp/metadata.h \
-    External/assimp/include/assimp/NullLogger.hpp \
-    External/assimp/include/assimp/postprocess.h \
-    External/assimp/include/assimp/ProgressHandler.hpp \
-    External/assimp/include/assimp/quaternion.h \
-    External/assimp/include/assimp/scene.h \
-    External/assimp/include/assimp/texture.h \
-    External/assimp/include/assimp/types.h \
-    External/assimp/include/assimp/vector2.h \
-    External/assimp/include/assimp/vector3.h \
-    External/assimp/include/assimp/version.h \
     Model3D/bone.h \
     Model3D/material.h \
     Model3D/mesh.h \

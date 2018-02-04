@@ -25,6 +25,73 @@ bool Model3D_4::loadFromFile(QString filename)
     return result;
 }
 
+void Model3D_4::rotate(const QQuaternion &rotation)
+{
+
+}
+
+void Model3D_4::translate(const QVector3D &translation)
+{
+
+}
+
+void Model3D_4::scale(const float scaleKoef)
+{
+
+}
+
+void Model3D_4::setGlobalTransform(const QMatrix4x4 &matrix)
+{
+
+}
+
+void Model3D_4::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
+{
+    QMatrix4x4 modelMatrix;
+    modelMatrix.setToIdentity();
+
+    m_VAO.bind();
+
+    // Enable attribute arrays
+    int location = program->attributeLocation("a_position");
+    program->enableAttributeArray(location);
+
+    location = program->attributeLocation("a_textCoord");
+    program->enableAttributeArray(location);
+
+    location = program->attributeLocation("a_normal");
+    program->enableAttributeArray(location);
+
+    for (int i = 0; i < m_meshes.size(); ++i) {
+        const Mesh& mesh = m_meshes[i];
+
+        // Set uniform values
+        program->setUniformValue("u_modelMatrix", modelMatrix * m_transformMatrixes[mesh.TransformMatrixIndex]);
+
+
+        int offset = 0;
+
+        // Set varying attribute "a_position"
+        program->setAttributeBuffer(location, GL_FLOAT, offset, 3, sizeof(VertexData));
+
+
+        offset += sizeof(QVector3D);
+        // Set varying attribute "a_textCoord"
+        program->setAttributeBuffer(location, GL_FLOAT, offset, 2, sizeof(VertexData));
+
+
+        offset += sizeof(QVector2D);
+        // Set varying attribute "a_normal"
+        program->setAttributeBuffer(location, GL_FLOAT, offset, 3, sizeof(VertexData));
+
+        // Draw
+        functions->glDrawElements(GL_TRIANGLES, mesh.NumIndexes, GL_UNSIGNED_INT, 0);
+
+    }
+
+    m_VAO.release();
+}
+
 void Model3D_4::clear()
 {
     if (m_VAO.isCreated())
@@ -50,6 +117,7 @@ void Model3D_4::recursiveInitMeshesMaterialsTransforms(
 
             mesh.BaseIndex = m_totalVertexes;
             mesh.NumVertexes = pMesh->mNumVertices;
+            mesh.NumIndexes = pMesh->mNumFaces * 3;
             mesh.MaterialIndex = pMesh->mMaterialIndex;
             mesh.TransformMatrixIndex = m_transformMatrixes.size() - 1;
 
@@ -85,6 +153,22 @@ void Model3D_4::initFromScene(aiScene *pScene)
     recursiveProcessAiNodes(pScene->mRootNode,
                             pScene->mRootNode->mTransformation,
                             vectors);
+
+    QOpenGLBuffer vertexDatasBuffer(QOpenGLBuffer::VertexBuffer);
+    QOpenGLBuffer indexesBuffer(QOpenGLBuffer::IndexBuffer);
+
+    // Bind VertexData array
+    vertexDatasBuffer.create();
+    vertexDatasBuffer.bind();
+    vertexDatasBuffer.allocate(vectors.VertexDatas.constData(),
+                               vectors.VertexDatas.size() * sizeof(VertexData));
+
+
+    // Bind index array
+    indexesBuffer.create();
+    indexesBuffer.bind();
+    indexesBuffer.allocate(vectors.VertexDatas.constData(),
+                           vectors.VertexDatas.size() * sizeof(uint));
 
     m_VAO.release();
 }

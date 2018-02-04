@@ -6,18 +6,21 @@
 #include <QString>
 #include <QVector>
 #include <QMatrix4x4>
+#include <QQuaternion>
 
 
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
+#include <QOpenGLFunctions>
 
 
 #include "Model3D/mesh.h"
 #include "Model3D/node.h"
 #include "Model3D/material.h"
-
 #include "Model3D/vertexdata.h"
+
+#include "transformational.h"
 
 
 
@@ -25,12 +28,19 @@
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
 
-class Model3D_4
+class Model3D_4 : public Transformational
 {
 public:
     Model3D_4();
 
     bool loadFromFile(QString filename);
+
+    // Transformational interface
+    void rotate(const QQuaternion &rotation) override;
+    void translate(const QVector3D &translation) override;
+    void scale(const float scaleKoef) override;
+    void setGlobalTransform(const QMatrix4x4 &matrix) override;
+    void draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions) override;
 
 private:
 
@@ -81,6 +91,7 @@ private:
 
     struct Mesh {
         uint NumVertexes;
+        uint NumIndexes;
         uint BaseIndex;
         uint MaterialIndex;
         uint TransformMatrixIndex;
@@ -93,6 +104,8 @@ private:
     QVector<Mesh> m_meshes;
     QVector<Material> m_materials;
     QVector<QMatrix4x4> m_transformMatrixes;
+
+
 };
 
 #endif // MODEL3D_4_H
