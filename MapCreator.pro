@@ -29,17 +29,15 @@ SOURCES += \
     simpleobject3d.cpp \
     Model3D/bone.cpp \
     Model3D/material.cpp \
-    Model3D/mesh.cpp \
     Model3D/node.cpp \
     Model3D/vertexdata.cpp \
     skybox.cpp \
-    test.cpp \
-    Model3D_4/model3d_4.cpp
+    Model3D_4/model3d_4.cpp \
+    test.cpp
 
 HEADERS += \
     Model3D/material.h \
     Model3D/bone.h \
-    Model3D/mesh.h \
     Model3D/node.h \
     Model3D/vertexdata.h \
     camera3d.h \
@@ -49,7 +47,8 @@ HEADERS += \
     skybox.h \
     transformational.h \
     Model3D_4/model3d_4.h \
-    assimp_adapter.h
+    assimp_adapter.h \
+    test.h
 
 
 

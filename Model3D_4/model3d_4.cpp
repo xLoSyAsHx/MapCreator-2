@@ -2,7 +2,10 @@
 
 #include "assimp_adapter.h"
 
-Model3D_4::Model3D_4()
+Model3D_4::Model3D_4() :
+    m_vertexBuffer(QOpenGLBuffer::VertexBuffer),
+    m_indexBuffer(QOpenGLBuffer::IndexBuffer),
+    m_v(0)
 {
 
 }
@@ -52,7 +55,10 @@ void Model3D_4::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
     QMatrix4x4 modelMatrix;
     modelMatrix.setToIdentity();
 
-    m_VAO.bind();
+    //m_VAO.bind();
+    // Bind buffers
+    m_vertexBuffer.bind();
+    m_indexBuffer.bind();
 
     // Enable attribute arrays
     int location = program->attributeLocation("a_position");
@@ -91,19 +97,38 @@ void Model3D_4::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
 
     }
 
-    m_VAO.release();
+    //m_VAO.release();
+    // Release
+    m_indexBuffer.release();
+    m_vertexBuffer.release();
 }
 
 void Model3D_4::clear()
 {
-    if (m_VAO.isCreated())
-        m_VAO.destroy();
+    //if (m_vertexBuffer.isCreated())
+        //m_vertexBuffer.destroy();
+
+    //if (m_indexBuffer.isCreated())
+        //m_indexBuffer.destroy();
+    //if (m_VAO.isCreated())
+        //m_VAO.destroy();
 
     m_totalVertexes = 0;
 
-    m_meshes.resize(0);
-    m_materials.resize(0);
-    m_transformMatrixes.resize(0);
+    QVector<Mesh> v;
+    int asd = v.size();
+    int asd2 = m_v.size();
+
+    m_meshes.resize(1);
+
+    if (!m_meshes.isEmpty())
+        m_meshes.clear();
+
+    if (!m_materials.isEmpty())
+        m_materials.clear();
+
+    if (!m_transformMatrixes.isEmpty())
+        m_transformMatrixes.clear();
 
 }
 
@@ -137,8 +162,9 @@ bool Model3D_4::initFromScene(const aiScene *pScene)
 {
     clear();
 
-    m_VAO.create();
-    m_VAO.bind();
+    //m_VAO.create();
+    //m_VAO.bind();
+
 
     m_meshes.resize(pScene->mNumMeshes);
     m_materials.resize(pScene->mNumMaterials);
@@ -159,23 +185,27 @@ bool Model3D_4::initFromScene(const aiScene *pScene)
                             toQMatrix4x4(pScene->mRootNode->mTransformation),
                             vectors);
 
-    QOpenGLBuffer vertexDatasBuffer(QOpenGLBuffer::VertexBuffer);
-    QOpenGLBuffer indexesBuffer(QOpenGLBuffer::IndexBuffer);
+    //QOpenGLBuffer vertexDatasBuffer(QOpenGLBuffer::VertexBuffer);
+    //QOpenGLBuffer indexesBuffer(QOpenGLBuffer::IndexBuffer);
+
+
 
     // Bind VertexData array
-    vertexDatasBuffer.create();
-    vertexDatasBuffer.bind();
-    vertexDatasBuffer.allocate(vectors.VertexDatas.constData(),
+    m_vertexBuffer.create();
+    m_vertexBuffer.bind();
+    m_vertexBuffer.allocate(vectors.VertexDatas.constData(),
                                vectors.VertexDatas.size() * sizeof(VertexData));
+    m_vertexBuffer.release();
 
 
     // Bind index array
-    indexesBuffer.create();
-    indexesBuffer.bind();
-    indexesBuffer.allocate(vectors.VertexDatas.constData(),
+    m_indexBuffer.create();
+    m_indexBuffer.bind();
+    m_indexBuffer.allocate(vectors.VertexDatas.constData(),
                            vectors.VertexDatas.size() * sizeof(uint));
+    m_indexBuffer.release();
 
-    m_VAO.release();
+    //m_VAO.release();
 
     return true;
 }

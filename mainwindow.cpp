@@ -13,6 +13,9 @@
 #include "camera3d.h"
 #include "skybox.h"
 
+
+#include "test.h"
+
 MainWindow::MainWindow(QWidget *parent) :
     QOpenGLWidget(parent)
 {
@@ -90,7 +93,9 @@ void MainWindow::initializeGL()
     m_skybox = new SkyBox(1000.0f, QImage(":/skybox.jpg"));
 
     //m_timer.start(30, this);
-    m_model3dTest->loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
+    //m_model3dTest->loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
+    Test test;
+    test.init("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
     qDebug() << "asd";
 }
 

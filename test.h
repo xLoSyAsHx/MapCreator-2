@@ -1,6 +1,5 @@
-#ifndef MODEL3D_4_H
-#define MODEL3D_4_H
-
+#ifndef TEST_H
+#define TEST_H
 
 // Qt includes
 #include <QString>
@@ -26,23 +25,21 @@
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
 
-
-
-
-
-class Model3D_4 : public Transformational
+class Test : public Transformational
 {
 public:
-    Model3D_4();
+    Test();
 
-    bool loadFromFile(QString filename);
+    void init(QString filename);
 
     // Transformational interface
+public:
     void rotate(const QQuaternion &rotation) override;
     void translate(const QVector3D &translation) override;
     void scale(const float scaleKoef) override;
     void setGlobalTransform(const QMatrix4x4 &matrix) override;
-    void draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions) override;
+    void draw(QOpenGLShaderProgram *programm, QOpenGLFunctions *functions) override;
+
 
 private:
 
@@ -112,8 +109,6 @@ private:
     QVector<uint> m_v;
     QVector<Material> m_materials;
     QVector<QMatrix4x4> m_transformMatrixes;
-
-
 };
 
-#endif // MODEL3D_4_H
+#endif // TEST_H
