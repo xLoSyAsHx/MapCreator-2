@@ -19,6 +19,8 @@
 
 #include "transformational.h"
 
+#include "assimp_adapter.h"
+
 
 
 #include <assimp/scene.h>
@@ -30,7 +32,7 @@ class Test : public Transformational
 public:
     Test();
 
-    void init(QString filename);
+    bool loadFromFile(QString filename);
 
     // Transformational interface
 public:

@@ -9,7 +9,8 @@
 
 #include <QBasicTimer>
 
-#include "Model3D_4/model3d_4.h"
+//#include "Model3D_4/model3d_4.h"
+#include "test.h"
 
 class SimpleObject3D;
 class Transformational;
@@ -60,7 +61,7 @@ private:
     float angleGroup2;
     float angleMain;
 
-    Model3D_4 *m_model3dTest;
+    //Model3D_4 *m_model3dTest;
 };
 
 #endif // MAINWINDOW_H

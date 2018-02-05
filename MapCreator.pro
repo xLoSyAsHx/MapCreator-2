@@ -33,7 +33,8 @@ SOURCES += \
     Model3D/vertexdata.cpp \
     skybox.cpp \
     Model3D_4/model3d_4.cpp \
-    test.cpp
+    test.cpp \
+    assimp_adapter.cpp
 
 HEADERS += \
     Model3D/material.h \
