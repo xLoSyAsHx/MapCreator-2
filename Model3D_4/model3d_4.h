@@ -47,10 +47,11 @@ public:
 private:
 
     void clear();
-
+/*
     void recursiveInitMeshesMaterialsTransforms(
             aiMesh **pMeshes,
             const aiNode *pNode, QMatrix4x4 transformMatrix);
+            */
     bool initFromScene(const aiScene *pScene);
 
     void addVertexDatas(const aiMesh* const pMesh,
@@ -89,7 +90,7 @@ private:
     };
 
     void recursiveProcessAiNodes(
-            const aiNode* pNode, QMatrix4x4 transformMatrix, VectorsForShader& vectors);
+            const aiNode* pNode, QMatrix4x4 transformMatrix, VectorsForShader& vectors, uint lastMeshIndex = 0);
 
 
     struct Mesh {
@@ -107,7 +108,7 @@ private:
     QOpenGLBuffer m_vertexBuffer;
     QOpenGLBuffer m_indexBuffer;
 
-    uint m_totalVertexes;
+    uint m_totalIndexes;
     QVector<Mesh> m_meshes;
     QVector<uint> m_v;
     QVector<Material> m_materials;

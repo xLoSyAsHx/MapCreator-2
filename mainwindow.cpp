@@ -70,6 +70,7 @@ void MainWindow::initializeGL()
 
     // Group 2
     m_groups.append(new Group3D);
+    /*
     for (float x = -width; x <= width; x += step) {
 
         for (float y = -height; y <= height; y += step) {
@@ -81,6 +82,9 @@ void MainWindow::initializeGL()
             }
         }
     }
+    */
+    m_model3dTest = new Model3D_4();
+    m_groups[1]->addObject(m_model3dTest);
     m_groups[1]->translate(QVector3D(12.0, 0.0f, 0.0f));
 
     // Group 3
@@ -94,8 +98,8 @@ void MainWindow::initializeGL()
 
     //m_timer.start(30, this);
     //m_model3dTest->loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
-    Test test;
-    test.loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
+    //Test test;
+    m_model3dTest->loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
     qDebug() << "asd";
 }
 
