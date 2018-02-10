@@ -60,7 +60,8 @@ private:
 
     void addIndexes(const aiMesh* const pMesh,
                     QVector<uint> &indexes,
-                    uint &indexes_LastIndex);
+                    uint &indexes_LastIndex,
+                    uint shift);
 
     struct VectorsForShader {
         VectorsForShader(aiMesh** meshes, uint size)
@@ -99,6 +100,7 @@ private:
         uint NumVertexes;
         uint NumIndexes;
         uint BaseIndex;
+        uint BaseVertex;
         uint MaterialIndex;
         uint TransformMatrixIndex;
     };
@@ -108,7 +110,7 @@ private:
     QOpenGLBuffer m_vertexBuffer;
     QOpenGLBuffer m_indexBuffer;
 
-    uint m_totalIndexes;
+    //uint m_totalIndexes;
     QVector<Mesh> m_meshes;
     QVector<uint> m_v;
     QVector<Material> m_materials;

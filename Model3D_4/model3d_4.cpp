@@ -1,3 +1,4 @@
+
 #include "model3d_4.h"
 
 #include "assimp_adapter.h"
@@ -54,6 +55,7 @@ void Model3D_4::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
 {
     QMatrix4x4 modelMatrix;
     modelMatrix.setToIdentity();
+    modelMatrix.translate(0, -5, 0);;
 
     //m_VAO.bind();
     // Bind buffers
@@ -93,7 +95,7 @@ void Model3D_4::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
         program->setAttributeBuffer(loc_normal, GL_FLOAT, offset, 3, sizeof(VertexData));
 
         // Draw
-        functions->glDrawElements(GL_TRIANGLES, mesh.NumIndexes, GL_UNSIGNED_INT, 0);
+        functions->glDrawElements(GL_TRIANGLES, mesh.NumIndexes, GL_UNSIGNED_INT, (GLvoid*)(sizeof(uint) * mesh.BaseIndex));
 
     }
 
@@ -112,8 +114,6 @@ void Model3D_4::clear()
         //m_indexBuffer.destroy();
     //if (m_VAO.isCreated())
         //m_VAO.destroy();
-
-    m_totalIndexes = 0;
 
     QVector<Mesh> v;
     int asd = v.size();
@@ -225,20 +225,23 @@ void Model3D_4::addVertexDatas(const aiMesh * const pMesh,
 }
 
 void Model3D_4::addIndexes(const aiMesh * const pMesh,
-                           QVector<uint> &indexes, uint &indexes_LastIndex)
+                           QVector<uint> &indexes, uint &indexes_LastIndex, uint shift)
 {
     for (int k = 0; k < pMesh->mNumFaces; ++k) {
         const aiFace& pFace = pMesh->mFaces[k];
 
-        indexes[indexes_LastIndex++] = pFace.mIndices[0];
-        indexes[indexes_LastIndex++] = pFace.mIndices[1];
-        indexes[indexes_LastIndex++] = pFace.mIndices[2];
+        indexes[indexes_LastIndex++] = pFace.mIndices[0] + shift;
+        indexes[indexes_LastIndex++] = pFace.mIndices[1] + shift;
+        indexes[indexes_LastIndex++] = pFace.mIndices[2] + shift;
     }
 }
 
 void Model3D_4::recursiveProcessAiNodes(
         const aiNode *pNode, QMatrix4x4 transformMatrix, VectorsForShader& vectors, uint lastMeshIndex)
 {
+    static uint totalIndexes = 0;
+    static uint totalVertexes = 0;
+
     m_transformMatrixes.push_back(transformMatrix);
 
 
@@ -247,7 +250,8 @@ void Model3D_4::recursiveProcessAiNodes(
 
         // Init Mesh
         Mesh& mesh = m_meshes[lastMeshIndex++];
-        mesh.BaseIndex = m_totalIndexes;
+        mesh.BaseIndex = totalIndexes;
+        mesh.BaseVertex = totalVertexes;
         mesh.NumIndexes = pMesh->mNumFaces * 3;
         mesh.NumVertexes = pMesh->mNumVertices;
         mesh.MaterialIndex = pMesh->mMaterialIndex;
@@ -256,11 +260,12 @@ void Model3D_4::recursiveProcessAiNodes(
         // Start process aiMesh
 
             addVertexDatas(pMesh, vectors.VertexDatas, vectors.VertexData_LastIndex);
-            addIndexes(pMesh, vectors.Indexes, vectors.Indexes_LastIndex);
+            addIndexes(pMesh, vectors.Indexes, vectors.Indexes_LastIndex, mesh.BaseVertex);
 
         // End process aiMesh
 
-        m_totalIndexes += mesh.NumIndexes;
+        totalIndexes += mesh.NumIndexes;
+        totalVertexes += mesh.NumVertexes;
     }
 
     for (int i = 0; i < pNode->mNumChildren; ++i) {
@@ -270,4 +275,7 @@ void Model3D_4::recursiveProcessAiNodes(
                     vectors,
                     lastMeshIndex);
     }
+
+    totalIndexes = 0;
+    totalVertexes = 0;
 }
