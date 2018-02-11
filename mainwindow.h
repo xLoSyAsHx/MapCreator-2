@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QOpenGLWidget>
+#include <QKeyEvent>
 #include <QMatrix4x4>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>
@@ -9,7 +10,7 @@
 
 #include <QBasicTimer>
 
-#include "Model3D_4/model3d_4.h"
+#include "Model3D_4/model3d.h"
 
 
 class SimpleObject3D;
@@ -37,6 +38,16 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
     void timerEvent(QTimerEvent *event) override;
 
+    void keyPressEvent(QKeyEvent *event) override {
+        if (event->key() == Qt::Key_Up)
+            m_model3dTest->translate(QVector3D(1, 0, 0));
+
+        if (event->key() == Qt::Key_Down)
+            m_model3dTest->translate(QVector3D(-1, 0, 0));
+
+        update();
+    }
+
     void initShaders();
     void initCube(float width);
 
@@ -61,7 +72,7 @@ private:
     float angleGroup2;
     float angleMain;
 
-    Model3D_4 *m_model3dTest;
+    Model3D *m_model3dTest;
 };
 
 #endif // MAINWINDOW_H

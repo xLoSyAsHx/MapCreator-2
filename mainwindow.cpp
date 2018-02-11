@@ -83,7 +83,7 @@ void MainWindow::initializeGL()
         }
     }
     */
-    m_model3dTest = new Model3D_4();
+    m_model3dTest = new Model3D();
     m_groups[1]->addObject(m_model3dTest);
     m_groups[1]->translate(QVector3D(12.0, 0.0f, 0.0f));
 

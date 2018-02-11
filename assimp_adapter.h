@@ -9,6 +9,7 @@
 #include <assimp/vector3.h>
 
 QVector3D toQVector3D(const aiVector3t<float> & vec3);
+QVector3D toQVector3D(const aiColor3D & col3);
 
 /*
 QVector3D toQVector3D(const aiVector3D & vec3) {

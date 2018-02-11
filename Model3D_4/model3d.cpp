@@ -1,17 +1,21 @@
 
-#include "model3d_4.h"
+#include "model3d.h"
 
 #include "assimp_adapter.h"
 
-Model3D_4::Model3D_4() :
+Model3D::Model3D() :
     m_vertexBuffer(QOpenGLBuffer::VertexBuffer),
-    m_indexBuffer(QOpenGLBuffer::IndexBuffer),
-    m_v(0)
+    m_indexBuffer(QOpenGLBuffer::IndexBuffer)
 {
 
 }
 
-bool Model3D_4::loadFromFile(QString filename)
+Model3D::~Model3D()
+{
+    clear();
+}
+
+bool Model3D::loadFromFile(QString filename)
 {
     bool result = false;
     Assimp::Importer importer;
@@ -20,6 +24,7 @@ bool Model3D_4::loadFromFile(QString filename)
                                               aiProcess_Triangulate |
                                               aiProcess_GenSmoothNormals |
                                               aiProcess_FlipUVs);
+
 
     if (pScene) {
         result = initFromScene(pScene);
@@ -31,33 +36,34 @@ bool Model3D_4::loadFromFile(QString filename)
     return result;
 }
 
-void Model3D_4::rotate(const QQuaternion &rotation)
+void Model3D::rotate(const QQuaternion &rotation)
 {
-
+    m_globalTransform.rotate(rotation);
 }
 
-void Model3D_4::translate(const QVector3D &translation)
+void Model3D::translate(const QVector3D &translation)
 {
-
+    m_globalTransform.translate(translation);
 }
 
-void Model3D_4::scale(const float scaleKoef)
+void Model3D::scale(const float scaleKoef)
 {
-
+    m_globalTransform.scale(scaleKoef);
 }
 
-void Model3D_4::setGlobalTransform(const QMatrix4x4 &matrix)
+void Model3D::setGlobalTransform(const QMatrix4x4 &matrix)
 {
-
+    m_globalTransform = matrix;
 }
 
-void Model3D_4::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
+void Model3D::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
 {
     QMatrix4x4 modelMatrix;
     modelMatrix.setToIdentity();
-    modelMatrix.translate(0, -5, 0);;
+    modelMatrix.translate(0, -5, 0);
 
-    //m_VAO.bind();
+    modelMatrix = m_globalTransform * modelMatrix;
+
     // Bind buffers
     m_vertexBuffer.bind();
     m_indexBuffer.bind();
@@ -74,9 +80,13 @@ void Model3D_4::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
 
     for (int i = 0; i < m_meshes.size(); ++i) {
         const Mesh& mesh = m_meshes[i];
+        const QSharedPointer<Material>& material = m_materials[mesh.MaterialIndex];
 
         // Set uniform values
         program->setUniformValue("u_modelMatrix", modelMatrix * m_transformMatrixes[mesh.TransformMatrixIndex]);
+
+        if (material->bind(aiTextureType_DIFFUSE, 0))
+            program->setUniformValue("u_texture0", 0);
 
 
         int offset = 0;
@@ -97,29 +107,24 @@ void Model3D_4::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
         // Draw
         functions->glDrawElements(GL_TRIANGLES, mesh.NumIndexes, GL_UNSIGNED_INT, (GLvoid*)(sizeof(uint) * mesh.BaseIndex));
 
+        if (material->isBound(aiTextureType_DIFFUSE))
+            material->release(aiTextureType_DIFFUSE);
     }
 
-    //m_VAO.release();
     // Release
     m_indexBuffer.release();
     m_vertexBuffer.release();
 }
 
-void Model3D_4::clear()
+void Model3D::clear()
 {
-    //if (m_vertexBuffer.isCreated())
-        //m_vertexBuffer.destroy();
+    m_globalTransform.setToIdentity();
 
-    //if (m_indexBuffer.isCreated())
-        //m_indexBuffer.destroy();
-    //if (m_VAO.isCreated())
-        //m_VAO.destroy();
+    if (m_vertexBuffer.isCreated())
+        m_vertexBuffer.destroy();
 
-    QVector<Mesh> v;
-    int asd = v.size();
-    int asd2 = m_v.size();
-
-    m_meshes.resize(1);
+    if (m_indexBuffer.isCreated())
+        m_indexBuffer.destroy();
 
     if (!m_meshes.isEmpty())
         m_meshes.clear();
@@ -130,61 +135,24 @@ void Model3D_4::clear()
     if (!m_transformMatrixes.isEmpty())
         m_transformMatrixes.clear();
 
+
 }
-/*
-void Model3D_4::recursiveInitMeshesMaterialsTransforms(
-        aiMesh **pMeshes,
-        const aiNode *pNode, QMatrix4x4 transformMatrix)
-{
-    m_transformMatrixes.push_back(transformMatrix);
 
-    for (int i = 0; i < pNode->mNumChildren; ++i) {
-        for (int j = 0; j < pNode->mNumMeshes; ++j) {
-            const aiMesh* pMesh = pMeshes[pNode->mMeshes[i]];
-            Mesh& mesh = m_meshes[i];
-
-            mesh.BaseIndex = m_totalVertexes;
-            mesh.NumVertexes = pMesh->mNumVertices;
-            mesh.NumIndexes = pMesh->mNumFaces * 3;
-            mesh.MaterialIndex = pMesh->mMaterialIndex;
-            mesh.TransformMatrixIndex = m_transformMatrixes.size() - 1;
-
-            m_totalVertexes += mesh.NumVertexes;
-        }
-
-        recursiveInitMeshesMaterialsTransforms(
-                    pMeshes,
-                    pNode->mChildren[i], transformMatrix * toQMatrix4x4(pNode->mTransformation));
-    }
-}
-*/
-bool Model3D_4::initFromScene(const aiScene *pScene)
+bool Model3D::initFromScene(const aiScene *pScene)
 {
     clear();
-
-    //m_VAO.create();
-    //m_VAO.bind();
-
 
     m_meshes.resize(pScene->mNumMeshes);
     m_materials.resize(pScene->mNumMaterials);
     m_transformMatrixes.resize(0);
-/*
-    recursiveInitMeshesMaterialsTransforms(
-                pScene->mMeshes,
-                pScene->mRootNode, toQMatrix4x4(pScene->mRootNode->mTransformation));
-*/
+
+    initMaterials(pScene);
 
     // Init meshes through node hierarchy
     VectorsForShader vectors(pScene->mMeshes, pScene->mNumMeshes);
     recursiveProcessAiNodes(pScene->mRootNode,
                             toQMatrix4x4(pScene->mRootNode->mTransformation),
                             vectors);
-
-    //QOpenGLBuffer vertexDatasBuffer(QOpenGLBuffer::VertexBuffer);
-    //QOpenGLBuffer indexesBuffer(QOpenGLBuffer::IndexBuffer);
-
-
 
     // Bind VertexData array
     m_vertexBuffer.create();
@@ -201,12 +169,10 @@ bool Model3D_4::initFromScene(const aiScene *pScene)
                            vectors.Indexes.size() * sizeof(uint));
     m_indexBuffer.release();
 
-    //m_VAO.release();
-
     return true;
 }
 
-void Model3D_4::addVertexDatas(const aiMesh * const pMesh,
+void Model3D::addVertexDatas(const aiMesh * const pMesh,
                                    QVector<VertexData> &vertexDatas, uint &vertexData_LastIndex)
 {
     for (int i = 0; i < pMesh->mNumVertices; ++i) {
@@ -224,7 +190,7 @@ void Model3D_4::addVertexDatas(const aiMesh * const pMesh,
     }
 }
 
-void Model3D_4::addIndexes(const aiMesh * const pMesh,
+void Model3D::addIndexes(const aiMesh * const pMesh,
                            QVector<uint> &indexes, uint &indexes_LastIndex, uint shift)
 {
     for (int k = 0; k < pMesh->mNumFaces; ++k) {
@@ -236,7 +202,7 @@ void Model3D_4::addIndexes(const aiMesh * const pMesh,
     }
 }
 
-void Model3D_4::recursiveProcessAiNodes(
+void Model3D::recursiveProcessAiNodes(
         const aiNode *pNode, QMatrix4x4 transformMatrix, VectorsForShader& vectors, uint lastMeshIndex)
 {
     static uint totalIndexes = 0;
@@ -278,4 +244,79 @@ void Model3D_4::recursiveProcessAiNodes(
 
     totalIndexes = 0;
     totalVertexes = 0;
+}
+
+void Model3D::initMaterials(const aiScene *pScene)
+{
+
+
+    for (unsigned int i = 0; i< pScene->mNumMaterials; i++) {
+        QSharedPointer<Material> material(new Material());
+
+        const aiMaterial* pMaterial = pScene->mMaterials[i];
+
+
+        QVector<aiTextureType> tTypes = {
+            aiTextureType_NONE,
+            aiTextureType_DIFFUSE,
+            aiTextureType_SPECULAR,
+            aiTextureType_AMBIENT,
+            aiTextureType_EMISSIVE,
+            aiTextureType_HEIGHT,
+            aiTextureType_NORMALS,
+            aiTextureType_SHININESS,
+            aiTextureType_OPACITY,
+            aiTextureType_DISPLACEMENT,
+            aiTextureType_LIGHTMAP,
+            aiTextureType_REFLECTION,
+            aiTextureType_UNKNOWN
+        };
+        QVector<int> t;
+        for (auto it = tTypes.begin(); it != tTypes.end(); ++it)
+            t.push_back(pMaterial->GetTextureCount(*it));
+
+
+        // Get material properties
+        aiColor3D color;
+        // Diffuse factor
+        if (pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS)
+            material->Diffuse = toQVector3D(color);
+        else
+            material->Diffuse = QVector3D(1.0f, 1.0f, 1.0f);
+
+        // Ambient factor
+        if (pMaterial->Get(AI_MATKEY_COLOR_AMBIENT, color) == AI_SUCCESS)
+            material->Ambient = toQVector3D(color);
+        else
+            material->Ambient = QVector3D(1.0f, 1.0f, 1.0f);
+
+        // Specular factor
+        if (pMaterial->Get(AI_MATKEY_COLOR_SPECULAR, color) == AI_SUCCESS)
+            material->Specular = toQVector3D(color);
+        else
+            material->Specular = QVector3D(1.0f, 1.0f, 1.0f);
+        // End getting material properties
+
+
+        if (pMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0){
+            aiString Path;
+
+            if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &Path,
+                                NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS){
+//                    std::string FullPath = Dir + "/" + Path.data;
+//                    m_Textures[i] = new Texture(GL_TEXTURE_2D, FullPath.c_str());
+
+//                    if (!m_Textures[i]->Load()){
+//                        printf("Error loading texture '%s'\n", FullPath.c_str());
+//                        delete m_Textures[i];
+//                        m_Textures[i] = NULL;
+//                        Ret = false;
+//                    }
+
+                qDebug() << "S";
+            }
+        }
+
+        m_materials[i] = material;
+    }
 }

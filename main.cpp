@@ -2,7 +2,7 @@
 #include <QApplication>
 
 
-
+#define TEST_MODE
 
 int main(int argc, char *argv[])
 {

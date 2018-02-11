@@ -32,9 +32,9 @@ SOURCES += \
     Model3D/node.cpp \
     Model3D/vertexdata.cpp \
     skybox.cpp \
-    Model3D_4/model3d_4.cpp \
     test.cpp \
-    assimp_adapter.cpp
+    assimp_adapter.cpp \
+    Model3D_4/model3d.cpp
 
 HEADERS += \
     Model3D/material.h \
@@ -47,9 +47,9 @@ HEADERS += \
     simpleobject3d.h \
     skybox.h \
     transformational.h \
-    Model3D_4/model3d_4.h \
     assimp_adapter.h \
-    test.h
+    test.h \
+    Model3D_4/model3d.h
 
 
 

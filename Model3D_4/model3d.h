@@ -11,7 +11,6 @@
 
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
-#include <QOpenGLVertexArrayObject>
 #include <QOpenGLFunctions>
 
 #include "Model3D/node.h"
@@ -27,13 +26,24 @@
 #include <assimp/Importer.hpp>
 
 
+#define TEST_MODE
 
 
-
-class Model3D_4 : public Transformational
+class Model3D : public Transformational
 {
 public:
-    Model3D_4();
+
+#ifdef TEST_MODE
+
+
+
+#endif
+
+
+
+
+    Model3D();
+    ~Model3D();
 
     bool loadFromFile(QString filename);
 
@@ -47,11 +57,7 @@ public:
 private:
 
     void clear();
-/*
-    void recursiveInitMeshesMaterialsTransforms(
-            aiMesh **pMeshes,
-            const aiNode *pNode, QMatrix4x4 transformMatrix);
-            */
+
     bool initFromScene(const aiScene *pScene);
 
     void addVertexDatas(const aiMesh* const pMesh,
@@ -62,6 +68,8 @@ private:
                     QVector<uint> &indexes,
                     uint &indexes_LastIndex,
                     uint shift);
+
+
 
     struct VectorsForShader {
         VectorsForShader(aiMesh** meshes, uint size)
@@ -93,6 +101,8 @@ private:
     void recursiveProcessAiNodes(
             const aiNode* pNode, QMatrix4x4 transformMatrix, VectorsForShader& vectors, uint lastMeshIndex = 0);
 
+    void initMaterials(const aiScene* pScene);
+
 
     struct Mesh {
         Mesh() {}
@@ -105,18 +115,13 @@ private:
         uint TransformMatrixIndex;
     };
 
-
-    QOpenGLVertexArrayObject m_VAO;
     QOpenGLBuffer m_vertexBuffer;
     QOpenGLBuffer m_indexBuffer;
 
-    //uint m_totalIndexes;
     QVector<Mesh> m_meshes;
-    QVector<uint> m_v;
-    QVector<Material> m_materials;
+    QVector<QSharedPointer<Material>> m_materials;
     QVector<QMatrix4x4> m_transformMatrixes;
-
-
+    QMatrix4x4 m_globalTransform;
 };
 
 #endif // MODEL3D_4_H
