@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>9v.fbx</file>
+    </qresource>
+</RCC>

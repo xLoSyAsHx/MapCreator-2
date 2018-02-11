@@ -8,6 +8,19 @@ Group3D::Group3D() :
 
 void Group3D::draw(QOpenGLShaderProgram *shaderProgram, QOpenGLFunctions *functions)
 {
+    for (auto it = m_objects.cbegin(); it != m_objects.cend(); ++it) {
+        (*it)->draw(shaderProgram, functions);
+    }
+}
+
+void Group3D::addObject(Transformational *obj)
+{
+    m_objects.append(obj);
+    m_formAndSetGlobalTransformForObjects(m_objects.size() - 1);
+}
+
+void Group3D::m_formAndSetGlobalTransformForObjects(int pos)
+{
     QMatrix4x4 localMatrix;
     localMatrix.setToIdentity();
     localMatrix.translate(m_translate);
@@ -15,34 +28,36 @@ void Group3D::draw(QOpenGLShaderProgram *shaderProgram, QOpenGLFunctions *functi
     localMatrix.scale(m_scale);
     localMatrix = m_globalTransform * localMatrix;
 
-    for (auto it = m_objects.cbegin(); it != m_objects.cend(); ++it) {
-        (*it)->setGlobalTransform(localMatrix);
-        (*it)->draw(shaderProgram, functions);
+    if (pos != -1) {
+        m_objects[pos]->setGlobalTransform(localMatrix);
+        return;
     }
 
-}
-
-void Group3D::addObject(Transformational *obj)
-{
-    m_objects.append(obj);
+    for (auto it = m_objects.cbegin(); it != m_objects.cend(); ++it) {
+        (*it)->setGlobalTransform(localMatrix);
+    }
 }
 
 void Group3D::rotate(const QQuaternion &rotation)
 {
     m_rotate = rotation * m_rotate;
+    m_formAndSetGlobalTransformForObjects();
 }
 
 void Group3D::translate(const QVector3D &translation)
 {
     m_translate += translation;
+    m_formAndSetGlobalTransformForObjects();
 }
 
 void Group3D::scale(const float scaleKoef)
 {
     m_scale *= scaleKoef;
+    m_formAndSetGlobalTransformForObjects();
 }
 
 void Group3D::setGlobalTransform(const QMatrix4x4 &transformMatrix)
 {
     m_globalTransform = transformMatrix;
+    m_formAndSetGlobalTransformForObjects();
 }

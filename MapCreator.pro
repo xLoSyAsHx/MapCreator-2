@@ -21,27 +21,57 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-
 SOURCES += \
-        main.cpp \
-        mainwindow.cpp \
+    group3d.cpp \
+    camera3d.cpp \
+    main.cpp \
+    mainwindow.cpp \
     simpleobject3d.cpp \
-    group3d.cpp
+    Model3D/bone.cpp \
+    Model3D/material.cpp \
+    Model3D/node.cpp \
+    Model3D/vertexdata.cpp \
+    skybox.cpp \
+    test.cpp \
+    assimp_adapter.cpp \
+    Model3D_4/model3d.cpp
 
 HEADERS += \
-        mainwindow.h \
+    Model3D/material.h \
+    Model3D/bone.h \
+    Model3D/node.h \
+    Model3D/vertexdata.h \
+    camera3d.h \
+    group3d.h \
+    mainwindow.h \
     simpleobject3d.h \
+    skybox.h \
     transformational.h \
-    group3d.h
+    assimp_adapter.h \
+    test.h \
+    Model3D_4/model3d.h
+
+
 
 win32-g* {
     LIBS += -lopengl32
 }
 
 win32-msvc* {
-    LIBS += -lopengl32.lib
+    LIBS += opengl32.lib
 }
+
 
 RESOURCES += \
     shaders.qrc \
-    textures.qrc
+    textures.qrc \
+    models.qrc
+
+
+win32: LIBS += -L$$PWD/External/assimp/ -lassimp
+
+INCLUDEPATH += $$PWD/External/assimp/include
+DEPENDPATH += $$PWD/External/assimp/include
+
+DISTFILES += \
+    Model3D_2/cube.jpg

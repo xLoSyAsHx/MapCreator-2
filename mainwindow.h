@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QOpenGLWidget>
+#include <QKeyEvent>
 #include <QMatrix4x4>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>
@@ -9,10 +10,14 @@
 
 #include <QBasicTimer>
 
+#include "Model3D_4/model3d.h"
+
 
 class SimpleObject3D;
 class Transformational;
 class Group3D;
+class Camera3D;
+class SkyBox;
 
 class MainWindow : public QOpenGLWidget
 {
@@ -33,18 +38,28 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
     void timerEvent(QTimerEvent *event) override;
 
+    void keyPressEvent(QKeyEvent *event) override {
+        if (event->key() == Qt::Key_Up)
+            m_model3dTest->translate(QVector3D(1, 0, 0));
+
+        if (event->key() == Qt::Key_Down)
+            m_model3dTest->translate(QVector3D(-1, 0, 0));
+
+        update();
+    }
+
     void initShaders();
     void initCube(float width);
 
 private:
-    // Camera position z
-    float m_z;
+    Camera3D *m_camera;
+    SkyBox *m_skybox;
 
     QMatrix4x4 m_projectionMatrix;
-    QOpenGLShaderProgram m_shaderProgramm;
+    QOpenGLShaderProgram m_shaderProgram;
+    QOpenGLShaderProgram m_shaderProgramSkyBox;
 
     QVector2D m_mousePosition;
-    QQuaternion m_rotation;
 
     QVector<SimpleObject3D*> m_objects;
     QVector<Group3D*> m_groups;
@@ -56,6 +71,8 @@ private:
     float angleGroup1;
     float angleGroup2;
     float angleMain;
+
+    Model3D *m_model3dTest;
 };
 
 #endif // MAINWINDOW_H

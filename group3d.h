@@ -32,6 +32,10 @@ private:
     QMatrix4x4 m_globalTransform;
 
     QVector<Transformational*> m_objects;
+
+
+
+    void m_formAndSetGlobalTransformForObjects(int pos = -1);
 };
 
 #endif // GROUP3D_H
