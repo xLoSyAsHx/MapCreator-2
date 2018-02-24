@@ -34,7 +34,9 @@ SOURCES += \
     skybox.cpp \
     test.cpp \
     assimp_adapter.cpp \
-    Model3D_4/model3d.cpp
+    Model3D_4/model3d.cpp \
+    landscape.cpp \
+    landscapesculpttool.cpp
 
 HEADERS += \
     Model3D/material.h \
@@ -49,7 +51,9 @@ HEADERS += \
     transformational.h \
     assimp_adapter.h \
     test.h \
-    Model3D_4/model3d.h
+    Model3D_4/model3d.h \
+    landscape.h \
+    landscapesculpttool.h
 
 
 
