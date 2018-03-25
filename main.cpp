@@ -16,8 +16,14 @@ int main(int argc, char *argv[])
 
     //Model3D* model = ModelLoader::loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
 
-    Landscape l(8, 8, 1);
-    Border2D b =  l.refreshByLandscapeTool(QVector2D(0, 0), 1);
+    LandscapeSculptTool::Instance().setCenter(QVector2D(-5, -5));
+    LandscapeSculptTool::Instance().setRadius(3);
+    LandscapeSculptTool::Instance().setBryshFalloff(0.5f);
+    LandscapeSculptTool::Instance().setToolStrength(1.0f);
+
+
+    Landscape l(10, 10, 1);
+    l.refreshByLandscapeTool();
 
     MainWindow w;
     w.show();

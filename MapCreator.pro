@@ -36,7 +36,8 @@ SOURCES += \
     assimp_adapter.cpp \
     Model3D_4/model3d.cpp \
     landscape.cpp \
-    landscapesculpttool.cpp
+    landscapesculpttool.cpp \
+    Tests/landscapeparttester.cpp
 
 HEADERS += \
     Model3D/material.h \
@@ -53,7 +54,8 @@ HEADERS += \
     test.h \
     Model3D_4/model3d.h \
     landscape.h \
-    landscapesculpttool.h
+    landscapesculpttool.h \
+    Tests/landscapeparttester.h
 
 
 

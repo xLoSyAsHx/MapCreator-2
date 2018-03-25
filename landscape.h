@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QMatrix4x4>
 #include <QQuaternion>
+#include <QPair>
 
 
 #include <QOpenGLShaderProgram>
@@ -54,7 +55,26 @@ struct Border2D {
     bool IsValid;
 };
 
+struct IndexBorder2D {
+    IndexBorder2D() :
+        IsValid(false)
+    {
+    }
 
+    IndexBorder2D(int topLeft, int downLeft, int topRight, int downRight) :
+        TopLeft(topLeft), DownLeft(downLeft),
+        TopRight(topRight), DownRight(downRight),
+        IsValid(true)
+    {
+    }
+
+    int TopLeft;
+    int DownLeft;
+    int TopRight;
+    int DownRight;
+
+    bool IsValid;
+};
 
 
 class Landscape : Transformational
@@ -72,17 +92,65 @@ public:
 
     void calculateNormals();
     void resetBuffers();
-    Border2D refreshByLandscapeTool();
-    Border2D refreshByLandscapeTool(QVector2D center, float size);
+    void refreshByLandscapeTool();
+    void refreshByLandscapeTool(QVector2D center, float size);
 
 private:
     void clear();
     void fillIndexes(uint width, uint height);
     void fillVertexes(uint width, uint height, uint blockSize);
 
-    QVector3D getNormalByFaceIndex(uint index) const;
-    Border2D getSmallestBorderForTool(QVector2D center, float size) const;
+    bool isCircleIntersectsLandscape(QVector2D circleCenter, float circleRadius);
+    int getShiftedIndexForPointOnBorderIntersects(int index); // If point is located on intersects function return new index for vector (which is not located on intersects)
+                                                              // Otherwise function return -1
 
+    QVector3D getNormalByFaceIndex(uint index) const;
+    QVector3D calculateNormalByIndex(uint index) const;
+
+    IndexBorder2D getIndexBorderForToolBySize(QVector2D toolCenter, float size);
+    QPair<int, int> getStartAndXIndexes(const IndexBorder2D & border,
+                                        const QVector2D & toolCenter, float circleRadius) const;
+    uint getIndexByShiftFromCenter(int x, int y) const;
+
+    struct InformationForUpdate {
+            InformationForUpdate(QVector2D toolCenter, float toolRadius, int rowLength) :
+                ToolCenter(toolCenter), ToolRadius(toolRadius), RowLength(rowLength), CanUpdate(false)
+            {
+            }
+
+            int RowLength;
+
+            float ToolRadius;
+            QVector2D ToolCenter;
+
+            int StartIndex;
+            int CurrentIndex;
+            int PrevIndex;
+
+            IndexBorder2D IndexBorder;
+            uint LandscapeDownLeftIndex;
+
+            QVector<uint> IndexesForUpdateVertexes;
+            QVector<uint> IndexForUpdateNormalsOnIntersects;
+
+            bool IsNeedToCheckBorderIntersects;
+            bool CanUpdate;
+        };
+
+
+    void prepareInfoForUpdateOuterRing(InformationForUpdate & info);
+    void prepareInfoForUpdateInnerCircle(InformationForUpdate & info);
+
+    QVector<uint> getCircleDownSide(InformationForUpdate info);
+    QVector<uint> getCircleTopSide(InformationForUpdate info);
+
+
+    void updateVertexPositions(const QVector<uint> & side, const QVector<uint> & interiorSide, float toolStrength);
+    void updateVertexesNormals(const QVector<uint> & side);
+
+    void findAndUpdateVertexesOnBorderIntersects(InformationForUpdate const &info);
+    QPair<int, int> getBordersOnIntersects(const InformationForUpdate & info,
+                                           int low, int high, int step);
 
     QOpenGLBuffer m_indexBuffer;
     QOpenGLBuffer m_vertexBuffer;
