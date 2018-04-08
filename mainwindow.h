@@ -7,10 +7,12 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>
 #include <QOpenGLBuffer>
+#include <QScopedPointer>
 
 #include <QBasicTimer>
 
 #include "Model3D_4/model3d.h"
+#include "landscape.h"
 
 
 class SimpleObject3D;
@@ -64,6 +66,9 @@ private:
     QVector<SimpleObject3D*> m_objects;
     QVector<Group3D*> m_groups;
     QVector<Transformational*> m_transformObjects;
+
+    //QScopedPointer<Landscape> m_landscape;
+    Landscape *m_landscape;
 
     // Animation
     QBasicTimer m_timer;

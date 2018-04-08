@@ -96,11 +96,14 @@ void MainWindow::initializeGL()
 
     m_skybox = new SkyBox(1000.0f, QImage(":/skybox.jpg"));
 
-    //m_timer.start(30, this);
+    m_timer.start(2000, this);
     //m_model3dTest->loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
     //Test test;
     m_model3dTest->loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
-    qDebug() << "asd";
+
+
+    //m_landscape.reset(new Landscape(2, 2, 1));
+    m_landscape = new Landscape(10, 10, 1);
 }
 
 void MainWindow::resizeGL(int w, int h)
@@ -137,6 +140,8 @@ void MainWindow::paintGL()
     m_camera->draw(&m_shaderProgram);
     for (auto it = m_transformObjects.cbegin(); it != m_transformObjects.cend(); ++it)
         (*it)->draw(&m_shaderProgram, context()->functions());
+
+    m_landscape->draw(&m_shaderProgram, context()->functions());
 
     m_shaderProgram.release();
 
@@ -189,6 +194,12 @@ void MainWindow::wheelEvent(QWheelEvent *event)
 
 void MainWindow::timerEvent(QTimerEvent *event)
 {
+    qDebug() << "asd";
+
+    m_landscape->refreshByLandscapeTool();
+    update();
+    return;
+
     Q_UNUSED(event)
 
     for (int i = 0; i < m_objects.size(); ++i) {

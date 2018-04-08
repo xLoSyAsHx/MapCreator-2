@@ -8,6 +8,21 @@ Landscape::Landscape(uint width, uint height, uint blockSize) :
 
     fillIndexes(width, height);
     fillVertexes(width, height, blockSize);
+
+    m_indexBuffer.create();
+    m_indexBuffer.bind();
+    m_indexBuffer.allocate(m_indexes.constData(), m_indexes.size() * sizeof(uint));
+    m_indexBuffer.release();
+
+    m_vertexBuffer.create();
+    m_vertexBuffer.bind();
+    m_vertexBuffer.allocate(m_vertexes.constData(), m_vertexes.size() * sizeof(VertexData));
+    m_vertexBuffer.release();
+}
+
+Landscape::~Landscape()
+{
+    int asd;
 }
 
 void Landscape::rotate(const QQuaternion &rotation)
@@ -161,6 +176,7 @@ void Landscape::fillVertexes(uint width, uint height, uint blockSize)
     for (uint i = 0; i < height + 1; ++i) {
         for (uint j = 0; j < width + 1; ++j) {
             m_vertexes[i * (width + 1) + j].position = QVector3D(blockSize * j, 0, blockSize * i) - halfLensOfLandscape;
+            m_vertexes[i * (width + 1) + j].normal = QVector3D(0, 1, 0);
         }
     }
 }
@@ -344,6 +360,8 @@ void Landscape::refreshByLandscapeTool()
     if (isCircleIntersectsLandscape(tool.getCenter(), tool.getRadius()) == false)
         return;
 
+    qDebug() << "Start refresh by landscape tool";
+
     QVector<uint> indexesForUpdateNormals;
 
     InformationForUpdate infoForUpdate(tool.getCenter(), tool.getRadius(), m_width + 1);
@@ -358,6 +376,7 @@ void Landscape::refreshByLandscapeTool()
     else
         prepareInfoForUpdateInnerCircle(infoForUpdate);
 
+    qDebug() << "Before form vectors";
 
     QVector<uint> downInteriorSide = getCircleDownSide(infoForUpdate);
     QVector<uint> topInteriorSide = getCircleTopSide(infoForUpdate);
@@ -366,7 +385,7 @@ void Landscape::refreshByLandscapeTool()
     //fillPerimeter(downInteriorSide, topInteriorSide, indexesForUpdateVertexes, indexForUpdateNormalsOnIntersects,
     //	toolCenter, size * toolFalloff, false);
 
-
+    qDebug() << "Before update";
 
     // Update Down side
     updateVertexPositions(downSide, downInteriorSide, tool.getToolStrength());
@@ -384,10 +403,12 @@ void Landscape::refreshByLandscapeTool()
 
     // Обновлять нормали надо только когда перестаёт быть активным LandscapeSculptTool
 
-
+    qDebug() << "Before rewrite buffer";
 
     // Определить с какого места и сколько VertexDatas надо обновить в вершинном буфере
-
+    int offset = infoForUpdate.IndexBorder.TopLeft * sizeof(VertexData);
+    int count = (infoForUpdate.IndexBorder.DownRight - infoForUpdate.IndexBorder.TopLeft + 1) * sizeof(VertexData);
+    m_vertexBuffer.write(offset, m_vertexes.data() + offset, count);
 
 
 
@@ -803,9 +824,9 @@ QPair<int, int> Landscape::getBordersOnIntersects(const InformationForUpdate & i
             minIntersect = center;
     }
 
-    if (checker.isInside(m_vertexes[minIntersect]))
+    if (checker.isInside(m_vertexes[minIntersect].position))
         res.first = minIntersect;
-    else if (checker.isInside(m_vertexes[maxIntersect]))
+    else if (checker.isInside(m_vertexes[maxIntersect].position))
         res.first = maxIntersect;
 
     minIntersect = low;
@@ -826,9 +847,9 @@ QPair<int, int> Landscape::getBordersOnIntersects(const InformationForUpdate & i
             maxIntersect = center;
     }
 
-    if (checker.isInside(m_vertexes[maxIntersect]))
+    if (checker.isInside(m_vertexes[maxIntersect].position))
         res.second = maxIntersect;
-    else if (checker.isInside(m_vertexes[minIntersect]))
+    else if (checker.isInside(m_vertexes[minIntersect].position))
         res.second = minIntersect;
 
     return res;

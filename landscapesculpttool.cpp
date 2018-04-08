@@ -61,7 +61,7 @@ float LandscapeSculptTool::getKoefDependsFromLen(const QVector3D & pos) const
     float falloffRadius = m_radius * m_brushFalloff;
     float lenFromPointToCenter = (QVector2D(pos.x(), pos.z()) - m_center).length();
 
-    return 1.0f -  qMax(lenFromPointToCenter - falloffRadius, 0) / (m_radius - falloffRadius);
+    return 1.0f -  qMax(lenFromPointToCenter - falloffRadius, 0.0f) / (m_radius - falloffRadius);
 }
 
 

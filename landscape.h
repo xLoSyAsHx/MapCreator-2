@@ -81,6 +81,7 @@ class Landscape : Transformational
 {
 public:
     Landscape(uint width, uint height, uint blockSize);
+    ~Landscape();
 
     // Transformational interface
 public:
