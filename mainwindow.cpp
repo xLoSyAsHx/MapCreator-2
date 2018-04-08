@@ -55,6 +55,7 @@ void MainWindow::initializeGL()
     // Group 1
     m_groups.append(new Group3D);
     //m_groups[0]->addObject(m_camera);
+    /*
     for (float x = -width; x <= width; x += step) {
 
         for (float y = -height; y <= height; y += step) {
@@ -67,7 +68,7 @@ void MainWindow::initializeGL()
         }
     }
     m_groups[0]->translate(QVector3D(-12.0, 0.0f, 0.0f));
-
+*/
     // Group 2
     m_groups.append(new Group3D);
     /*

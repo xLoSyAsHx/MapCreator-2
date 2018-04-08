@@ -19,8 +19,7 @@ int main(int argc, char *argv[])
     LandscapeSculptTool::Instance().setCenter(QVector2D(0, 0));
     LandscapeSculptTool::Instance().setRadius(3);
     LandscapeSculptTool::Instance().setBryshFalloff(0.5f);
-    LandscapeSculptTool::Instance().setToolStrength(1.0f);
-
+    LandscapeSculptTool::Instance().setToolStrength(1.1f);
 
     //Landscape l(10, 10, 1);
     //l.refreshByLandscapeTool();

@@ -297,22 +297,19 @@ IndexBorder2D Landscape::getIndexBorderForToolBySize(QVector2D toolCenter, float
 
     if (isCircleIntersectsLandscape(toolCenter, circleRadius))
     {
-        auto roundForBorder = [](float val) {
-            if (val < 0)
-                return int(val - 1);
-
-            return int(val);
-        };
         // Определить примерный прямоугольник, в котором находится центр
-        int leftX = qMax(roundForBorder(toolCenter.x() - circleRadius), -m_width / 2); // 41.2 -> 41
-        int topZ = qMax(roundForBorder(toolCenter.y() - circleRadius), -m_length / 2);
-        int downZ = qMin(roundForBorder(toolCenter.y() + circleRadius), m_length / 2 + m_length % 2);
+        int leftX = qMax(int(toolCenter.x() - circleRadius), -m_width / 2); // 41.2 -> 41
+        int rightX = qMin(int(toolCenter.x() + circleRadius), m_width / 2);
+        int topZ = qMax(int(toolCenter.y() - circleRadius), -m_length / 2);
+        int downZ = qMin(int(toolCenter.y() + circleRadius), m_length / 2 + m_length % 2);
         //int numIndexesInRow = rightX - leftX + 1;
         //int numIndexesInColumn = downZ - topZ + 1;
 
         // Определить верхнюю левую и нижнюю левую точки для перерасчёта координат и нормалей
         border.TopLeft = getIndexByShiftFromCenter(leftX, topZ);
         border.DownLeft = getIndexByShiftFromCenter(leftX, downZ);
+        border.TopRight = getIndexByShiftFromCenter(rightX, topZ);
+        border.DownRight = getIndexByShiftFromCenter(rightX, downZ);
         border.IsValid = true;
     }
     else
@@ -360,8 +357,6 @@ void Landscape::refreshByLandscapeTool()
     if (isCircleIntersectsLandscape(tool.getCenter(), tool.getRadius()) == false)
         return;
 
-    qDebug() << "Start refresh by landscape tool";
-
     QVector<uint> indexesForUpdateNormals;
 
     InformationForUpdate infoForUpdate(tool.getCenter(), tool.getRadius(), m_width + 1);
@@ -376,16 +371,12 @@ void Landscape::refreshByLandscapeTool()
     else
         prepareInfoForUpdateInnerCircle(infoForUpdate);
 
-    qDebug() << "Before form vectors";
-
     QVector<uint> downInteriorSide = getCircleDownSide(infoForUpdate);
     QVector<uint> topInteriorSide = getCircleTopSide(infoForUpdate);
 
     // startIndex должен быть на той же строке на которой был при расчёте внешнего кольца
     //fillPerimeter(downInteriorSide, topInteriorSide, indexesForUpdateVertexes, indexForUpdateNormalsOnIntersects,
     //	toolCenter, size * toolFalloff, false);
-
-    qDebug() << "Before update";
 
     // Update Down side
     updateVertexPositions(downSide, downInteriorSide, tool.getToolStrength());
@@ -396,10 +387,10 @@ void Landscape::refreshByLandscapeTool()
     infoForUpdate.ToolRadius = tool.getRadius();
 
     // Find and update vertex positions on intersects
-    findAndUpdateVertexesOnBorderIntersects(infoForUpdate);
+    //findAndUpdateVertexesOnBorderIntersects(infoForUpdate);
 
 
-
+    prepareInfoForUpdateOuterRing(infoForUpdate);
 
     // Обновлять нормали надо только когда перестаёт быть активным LandscapeSculptTool
 
@@ -408,7 +399,10 @@ void Landscape::refreshByLandscapeTool()
     // Определить с какого места и сколько VertexDatas надо обновить в вершинном буфере
     int offset = infoForUpdate.IndexBorder.TopLeft * sizeof(VertexData);
     int count = (infoForUpdate.IndexBorder.DownRight - infoForUpdate.IndexBorder.TopLeft + 1) * sizeof(VertexData);
-    m_vertexBuffer.write(offset, m_vertexes.data() + offset, count);
+
+    m_vertexBuffer.bind();
+    m_vertexBuffer.write(offset, m_vertexes.data() + infoForUpdate.IndexBorder.TopLeft, count);
+    m_vertexBuffer.release();
 
 
 
@@ -445,6 +439,18 @@ void Landscape::prepareInfoForUpdateInnerCircle(Landscape::InformationForUpdate 
 
     LandscapeSculptTool::InsideCircleChecker checker(info.ToolRadius, info.ToolCenter);
 
+    for (int i = 0; ; ++i)
+    {
+        int index = info.StartIndex + i;
+
+        if (checker.isInside(m_vertexes[index].position))
+        {
+            info.StartIndex = info.CurrentIndex = info.PrevIndex = index;
+            break;
+        }
+    }
+
+    /*
     QPair<int, int> startAndX_indexes = getStartAndXIndexes(info.IndexBorder, info.ToolCenter, info.ToolRadius);
     info.StartIndex = startAndX_indexes.first;
 
@@ -452,6 +458,7 @@ void Landscape::prepareInfoForUpdateInnerCircle(Landscape::InformationForUpdate 
         info.StartIndex = info.CurrentIndex = info.PrevIndex = startAndX_indexes.second + 1;
     else
         info.CurrentIndex = info.PrevIndex = info.StartIndex;
+        */
 
 }
 
@@ -468,30 +475,8 @@ QVector<uint> Landscape::getCircleDownSide(Landscape::InformationForUpdate info)
 
         if (checker.isInside(m_vertexes[info.CurrentIndex].position) == true)
         {
-            int index = getShiftedIndexForPointOnBorderIntersects(info.CurrentIndex);
-
-            if (index >= 0)
-            {
-                if (checker.isInside(m_vertexes[index].position) == true)
-                {
-                    downSide.push_back(index);
-                    info.CurrentIndex += info.RowLength;
-                }
-                else
-                {
-                    ++info.CurrentIndex;
-                }
-            }
-            else if (index == -1)
-            {
-                downSide.push_back(info.CurrentIndex);
-                info.CurrentIndex += info.RowLength;
-            }
-            else
-            {
-                info.CurrentIndex += info.RowLength;
-            }
-
+            downSide.push_back(info.CurrentIndex);
+            info.CurrentIndex += info.RowLength;
         }
         else
         {
@@ -521,31 +506,10 @@ QVector<uint> Landscape::getCircleDownSide(Landscape::InformationForUpdate info)
         // It's the defence from case when row changed but CurrentIndex is still inside circle
         if (checker.isInside(m_vertexes[info.CurrentIndex].position) == false || isRowChanged == true)
         {
-            int index = getShiftedIndexForPointOnBorderIntersects(info.PrevIndex);
+            downSide.push_back(info.PrevIndex);
 
-            if (index >= 0)
-            {
-                if (checker.isInside(m_vertexes[index].position) == true)
-                {
-                    downSide.push_back(index);
-
-                    info.PrevIndex = info.CurrentIndex - info.RowLength - 1;
-                    info.CurrentIndex -= info.RowLength + 1;
-                }
-                else
-                    ++info.CurrentIndex;
-            }
-            else if (index == -1)
-            {
-                downSide.push_back(info.PrevIndex);
-
-                info.PrevIndex = info.CurrentIndex - info.RowLength - 1;
-                info.CurrentIndex -= info.RowLength + 1;
-            }
-            else
-            {
-                break;
-            }
+            info.PrevIndex = info.CurrentIndex - info.RowLength - 1;
+            info.CurrentIndex -= info.RowLength + 1;
         }
         else
         {
@@ -577,32 +541,8 @@ QVector<uint> Landscape::getCircleTopSide(Landscape::InformationForUpdate info)
 
         if (checker.isInside(m_vertexes[info.CurrentIndex].position) == true)
         {
-            int index = getShiftedIndexForPointOnBorderIntersects(info.CurrentIndex);
-
-            if (index >= 0)
-            {
-                if (checker.isInside(m_vertexes[index].position) == true)
-                {
-                    if (topSide.isEmpty() == true || topSide.last() != index)
-                        topSide.push_back(index);
-
-                    info.CurrentIndex -= info.RowLength;
-                }
-                else
-                {
-                    //++info.CurrentIndex;
-                    break;
-                }
-            }
-            else if (index == -1)
-            {
-                topSide.push_back(info.CurrentIndex);
-                info.CurrentIndex -= info.RowLength;
-            }
-            else
-            {
-                break;
-            }
+            topSide.push_back(info.CurrentIndex);
+            info.CurrentIndex -= info.RowLength;
         }
         else {
             ++info.CurrentIndex;
@@ -626,30 +566,12 @@ QVector<uint> Landscape::getCircleTopSide(Landscape::InformationForUpdate info)
     while (info.CurrentIndex < info.StartIndex) {
         if (checker.isInside(m_vertexes[info.CurrentIndex].position) == false)
         {
-            int index = getShiftedIndexForPointOnBorderIntersects(info.PrevIndex);
-
-            if (index >= 0)
-            {
-                if (checker.isInside(m_vertexes[index].position) == true)
-                {
-                    topSide.push_back(index);
-                    info.CurrentIndex += info.RowLength;
-                    info.PrevIndex = info.CurrentIndex - 1;
-                }
-            }
-            else if (index == -1)
-            {
-                topSide.push_back(info.PrevIndex);
-                info.CurrentIndex += info.RowLength;
-                info.PrevIndex = info.CurrentIndex - 1;
-            }
-            else
-            {
-                info.PrevIndex = info.CurrentIndex;
-                ++info.CurrentIndex;
-            }
+            topSide.push_back(info.PrevIndex);
+            info.CurrentIndex += info.RowLength;
+            info.PrevIndex = info.CurrentIndex - 1;
         }
-        else {
+        else
+        {
             info.PrevIndex = info.CurrentIndex;
             ++info.CurrentIndex;
         }
