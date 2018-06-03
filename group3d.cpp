@@ -13,6 +13,11 @@ void Group3D::draw(QOpenGLShaderProgram *shaderProgram, QOpenGLFunctions *functi
     }
 }
 
+QVector3D Group3D::getPosition() const
+{
+    return QVector3D(0, 0, 0);
+}
+
 void Group3D::addObject(Transformational *obj)
 {
     m_objects.append(obj);

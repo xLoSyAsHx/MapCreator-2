@@ -4,5 +4,11 @@
         <file>vshader.vsh</file>
         <file>skybox.vsh</file>
         <file>skybox.fsh</file>
+        <file>landscape.vsh</file>
+        <file>landscape.fsh</file>
+        <file>object_picking.fsh</file>
+        <file>object_picking.vsh</file>
+        <file>object_selection_cubes.fsh</file>
+        <file>object_selection_cubes.vsh</file>
     </qresource>
 </RCC>

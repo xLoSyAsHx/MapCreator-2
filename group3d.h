@@ -20,6 +20,9 @@ public:
     void scale(const float scaleKoef) override;
     void setGlobalTransform(const QMatrix4x4 &matrix) override;
     void draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions) override;
+    void objectPicking(QOpenGLShaderProgram *programm, QOpenGLFunctions *functions) override {}
+
+    QVector3D getPosition() const override;
     // End Transformational interface
 
     void addObject(Transformational *obj);
@@ -36,6 +39,7 @@ private:
 
 
     void m_formAndSetGlobalTransformForObjects(int pos = -1);
+
 };
 
 #endif // GROUP3D_H

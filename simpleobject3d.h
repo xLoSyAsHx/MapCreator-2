@@ -20,11 +20,14 @@ public:
 
     void init(QVector<VertexData> &vertData, const QVector<GLuint> &indexes, const QImage &texture);
     void draw(class QOpenGLShaderProgram *programm, class QOpenGLFunctions *functions);
+    void objectPicking(QOpenGLShaderProgram *programm, QOpenGLFunctions *functions) override {}
 
     void rotate(const class QQuaternion &rotation);
     void translate(const class QVector3D &translation);
     void scale(const float scaleKoef);
     void setGlobalTransform(const class QMatrix4x4 &transformMatrix);
+
+    QVector3D getPosition() const override;
 
 
 private:

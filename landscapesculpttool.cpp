@@ -4,11 +4,17 @@
 bool LandscapeSculptTool::InsideCircleChecker::isInside(const QVector3D &pos) const
 {
     return m_squaredToolRadius >=
-        qPow(pos.x() - m_toolCenter.x(), 2) +
-        qPow(pos.z() - m_toolCenter.y(), 2);
+        //qPow(pos.x() - m_toolCenter.x(), 2) +
+        //qPow(pos.z() - m_toolCenter.y(), 2);
+            (QVector2D(pos.x(), pos.z()) - m_toolCenter).lengthSquared();
 }
 
 
+
+void LandscapeSculptTool::updateLandscapeSculptToolCenter(QVector2D center)
+{
+    m_center = center;
+}
 
 LandscapeSculptTool &LandscapeSculptTool::Instance()
 {

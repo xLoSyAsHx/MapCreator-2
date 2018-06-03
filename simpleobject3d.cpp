@@ -109,6 +109,11 @@ void SimpleObject3D::setGlobalTransform(const QMatrix4x4 &transformMatrix)
     m_globalTransform = transformMatrix;
 }
 
+QVector3D SimpleObject3D::getPosition() const
+{
+    return QVector3D(0, 0, 0);
+}
+
 void SimpleObject3D::init(QVector<VertexData> &vertData, const QVector<GLuint> &indexes, const QImage &texture)
 {
     if (m_vertexBuffer.isCreated())

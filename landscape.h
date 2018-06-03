@@ -1,6 +1,9 @@
 #ifndef LANDSCAPE_H
 #define LANDSCAPE_H
 
+#include <functional>
+#include <iostream>
+
 
 // Qt includes
 #include <QString>
@@ -21,7 +24,8 @@
 #include "transformational.h"
 
 #include "landscapesculpttool.h"
-
+#include "Model3D/material.h"
+#include <QOpenGLTexture>
 
 struct Border2D {
 
@@ -76,12 +80,25 @@ struct IndexBorder2D {
     bool IsValid;
 };
 
+class LandscapeManager;
 
-class Landscape : Transformational
+
+//using Mfunc = std::func
+//using MFunc =  QVector4D (LandscapeManager::*MFunc)(); // MFunc - тип указателя
+
+class Landscape : public Transformational
 {
 public:
-    Landscape(uint width, uint height, uint blockSize);
+    using Mfunc = std::function<QVector4D()>;
+
+    Landscape(uint width, uint height, uint blockSize, Mfunc generateId);
     ~Landscape();
+
+    struct PrimitivePointPositions {
+        QVector3D pointA;
+        QVector3D pointB;
+        QVector3D pointC;
+    };
 
     // Transformational interface
 public:
@@ -90,16 +107,27 @@ public:
     void scale(const float scaleKoef) override;
     void setGlobalTransform(const QMatrix4x4 &matrix) override;
     void draw(QOpenGLShaderProgram *programm, QOpenGLFunctions *functions) override;
+    void objectPicking(QOpenGLShaderProgram *programm, QOpenGLFunctions *functions) override;
+
+    QVector3D getPosition() const override;
+    PrimitivePointPositions getTrianglePointGlobalPositions(
+            int triangleId, QMatrix4x4 projectionMatrix);
+
+    void addTexture(aiTextureType type, QOpenGLTexture *image);
+
 
     void calculateNormals();
     void resetBuffers();
+
+    void setSculptToolUsage(bool isLandscapeSculptToolUse);
     void refreshByLandscapeTool();
     void refreshByLandscapeTool(QVector2D center, float size);
 
 private:
     void clear();
     void fillIndexes(uint width, uint height);
-    void fillVertexes(uint width, uint height, uint blockSize);
+    void fillVertexes(uint width, uint height, uint blockSize, Mfunc generateId);
+    void fillTextureCoords(uint width, uint height);
 
     bool isCircleIntersectsLandscape(QVector2D circleCenter, float circleRadius);
     int getShiftedIndexForPointOnBorderIntersects(int index); // If point is located on intersects function return new index for vector (which is not located on intersects)
@@ -136,7 +164,11 @@ private:
 
             bool IsNeedToCheckBorderIntersects;
             bool CanUpdate;
+
+            bool statusNoErr = true;
         };
+
+
 
 
     void prepareInfoForUpdateOuterRing(InformationForUpdate & info);
@@ -153,6 +185,8 @@ private:
     QPair<int, int> getBordersOnIntersects(const InformationForUpdate & info,
                                            int low, int high, int step);
 
+    Material m_landscapeMaterial;
+
     QOpenGLBuffer m_indexBuffer;
     QOpenGLBuffer m_vertexBuffer;
 
@@ -162,7 +196,10 @@ private:
     int m_width, m_length; // width - X. length - Z
     uint m_blockSize;
 
+    QVector3D m_translate = QVector3D(0, 0, 0);
 
+
+    bool m_isSculpToolUse = false;
 };
 
 #endif // LANDSCAPE_H

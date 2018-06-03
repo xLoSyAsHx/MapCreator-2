@@ -1,14 +1,19 @@
 #ifndef LANDSCAPESCULPTTOOL_H
 #define LANDSCAPESCULPTTOOL_H
 
+#include <QObject>
+
 #include <QtMath>
 #include <QVector2D>
 
 #include "Model3D/vertexdata.h"
 
 
-class LandscapeSculptTool
+class LandscapeSculptTool : QObject
 {
+public slots:
+    void updateLandscapeSculptToolCenter(QVector2D center);
+
 public:
 
     enum class  Type {

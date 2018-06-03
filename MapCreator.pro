@@ -37,7 +37,18 @@ SOURCES += \
     Model3D_4/model3d.cpp \
     landscape.cpp \
     landscapesculpttool.cpp \
-    Tests/landscapeparttester.cpp
+    Tests/landscapeparttester.cpp \
+    pickingtexture.cpp \
+    utils.cpp \
+    objectmanager.cpp \
+    landscapemanager.cpp \
+    system.cpp \
+    mainapplicationwindow.cpp \
+    objects3dlist.cpp \
+    widgetforlist.cpp \
+    landscapewidget.cpp \
+    SystemWidgets/objectparameterswidget.cpp \
+    plane3d.cpp
 
 HEADERS += \
     Model3D/material.h \
@@ -55,16 +66,27 @@ HEADERS += \
     Model3D_4/model3d.h \
     landscape.h \
     landscapesculpttool.h \
-    Tests/landscapeparttester.h
+    Tests/landscapeparttester.h \
+    pickingtexture.h \
+    utils.h \
+    objectmanager.h \
+    landscapemanager.h \
+    system.h \
+    mainapplicationwindow.h \
+    objects3dlist.h \
+    widgetforlist.h \
+    landscapewidget.h \
+    SystemWidgets/objectparameterswidget.h \
+    plane3d.h
 
 
 
 win32-g* {
-    LIBS += -lopengl32
+    LIBS += -lglu32 -lopengl32 -lgdi32 -luser32
 }
 
 win32-msvc* {
-    LIBS += opengl32.lib
+    LIBS += opengl32.lib -lglut
 }
 
 

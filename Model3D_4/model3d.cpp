@@ -3,11 +3,20 @@
 
 #include "assimp_adapter.h"
 
-Model3D::Model3D() :
-    m_vertexBuffer(QOpenGLBuffer::VertexBuffer),
-    m_indexBuffer(QOpenGLBuffer::IndexBuffer)
-{
+#include "camera3d.h"
 
+Model3D::Model3D(QVector4D objId) :
+    m_vertexBuffer(QOpenGLBuffer::VertexBuffer),
+    m_indexBuffer(QOpenGLBuffer::IndexBuffer),
+    m_vertexBuffer_SelectionCube(QOpenGLBuffer::VertexBuffer),
+    m_indexBuffer_SelectionCube(QOpenGLBuffer::IndexBuffer),
+    m_scale(QVector3D(1, 1, 1)),
+    m_objId(objId)
+{
+    Camera3D& camera = Camera3D::Instance();
+    m_translate = camera.getPosition() + camera.getDirection() * 50;
+    QVector3D dir = camera.getDirection();
+    m_translate = QVector3D(qRound(m_translate.x()), qRound(m_translate.y()), qRound(m_translate.z()));
 }
 
 Model3D::~Model3D()
@@ -38,17 +47,17 @@ bool Model3D::loadFromFile(QString filename)
 
 void Model3D::rotate(const QQuaternion &rotation)
 {
-    m_globalTransform.rotate(rotation);
+    m_rotate = rotation * m_rotate;
 }
 
 void Model3D::translate(const QVector3D &translation)
 {
-    m_globalTransform.translate(translation);
+    m_translate += translation;
 }
 
 void Model3D::scale(const float scaleKoef)
 {
-    m_globalTransform.scale(scaleKoef);
+    m_scale *= scaleKoef;
 }
 
 void Model3D::setGlobalTransform(const QMatrix4x4 &matrix)
@@ -60,9 +69,10 @@ void Model3D::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
 {
     QMatrix4x4 modelMatrix;
     modelMatrix.setToIdentity();
-    modelMatrix.translate(0, -5, 0);
+    modelMatrix.translate(m_translate);
+    modelMatrix.rotate(m_rotate);
+    modelMatrix.scale(m_scale);
 
-    modelMatrix = m_globalTransform * modelMatrix;
 
     // Bind buffers
     m_vertexBuffer.bind();
@@ -84,9 +94,23 @@ void Model3D::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
 
         // Set uniform values
         program->setUniformValue("u_modelMatrix", modelMatrix * m_transformMatrixes[mesh.TransformMatrixIndex]);
+        program->setUniformValue("u_isLandscape", 0);
+
 
         if (material->bind(aiTextureType_DIFFUSE, 0))
+        {
             program->setUniformValue("u_texture0", 0);
+            program->setUniformValue("u_hasTexture", 1);
+        }
+        else
+        {
+            program->setUniformValue("u_hasTexture", 0);
+
+            program->setUniformValue("u_diffuse", material->Diffuse);
+            program->setUniformValue("u_ambient", material->Ambient);
+            program->setUniformValue("u_specular", material->Specular);
+            program->setUniformValue("u_shininess", material->Shininess);
+        }
 
 
         int offset = 0;
@@ -114,6 +138,108 @@ void Model3D::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
     // Release
     m_indexBuffer.release();
     m_vertexBuffer.release();
+}
+
+void Model3D::drawSelectionCubes(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
+{
+    if (isSelected() == false)
+        return;
+
+    QMatrix4x4 modelMatrix;
+    modelMatrix.setToIdentity();
+    modelMatrix.translate(m_translate);
+    modelMatrix.rotate(m_rotate);
+    modelMatrix.scale(m_scale);
+
+
+    // Bind buffers
+    m_vertexBuffer_SelectionCube.bind();
+    m_indexBuffer_SelectionCube.bind();
+
+    program->setUniformValue("u_modelMatrix", modelMatrix);
+
+    // Enable attribute arrays
+    int loc_position = program->attributeLocation("a_position");
+    program->enableAttributeArray(loc_position);
+
+
+
+    // Set varying attribute "a_position"
+    program->setAttributeBuffer(loc_position, GL_FLOAT, 0, 3, sizeof(QVector3D));
+
+    // Draw
+    functions->glDrawElements(GL_LINES, m_indexBuffer_SelectionCube.size(), GL_UNSIGNED_INT, 0);
+
+
+    // Release buffers
+    m_vertexBuffer_SelectionCube.release();
+    m_indexBuffer_SelectionCube.release();
+}
+
+void Model3D::objectPicking(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
+{
+    QMatrix4x4 modelMatrix;
+    modelMatrix.setToIdentity();
+    modelMatrix.translate(m_translate);
+    modelMatrix.rotate(m_rotate);
+    modelMatrix.scale(m_scale);
+
+
+    // Bind buffers
+    m_vertexBuffer.bind();
+    m_indexBuffer.bind();
+
+    // Enable attribute arrays
+    int loc_position = program->attributeLocation("a_position");
+    program->enableAttributeArray(loc_position);
+
+    int loc_textCoord = program->attributeLocation("a_textCoord");
+    program->enableAttributeArray(loc_textCoord);
+
+    int loc_normal = program->attributeLocation("a_normal");
+    program->enableAttributeArray(loc_normal);
+
+    int loc_id = program->attributeLocation("a_id");
+    program->enableAttributeArray(loc_id);
+
+    for (int i = 0; i < m_meshes.size(); ++i) {
+        const Mesh& mesh = m_meshes[i];
+
+        // Set uniform values
+        program->setUniformValue("u_modelMatrix", modelMatrix * m_transformMatrixes[mesh.TransformMatrixIndex]);
+
+        int offset = 0;
+
+        // Set varying attribute "a_position"
+        program->setAttributeBuffer(loc_position, GL_FLOAT, offset, 3, sizeof(VertexData));
+
+
+        offset += sizeof(QVector3D);
+        // Set varying attribute "a_textCoord"
+        program->setAttributeBuffer(loc_textCoord, GL_FLOAT, offset, 2, sizeof(VertexData));
+
+
+        offset += sizeof(QVector2D);
+        // Set varying attribute "a_normal"
+        program->setAttributeBuffer(loc_normal, GL_FLOAT, offset, 3, sizeof(VertexData));
+
+        offset += sizeof(QVector3D);
+        // Set varying attribute "a_id"
+        program->setAttributeBuffer(loc_id, GL_FLOAT, offset, 4, sizeof(VertexData));
+
+
+        // Draw
+        functions->glDrawElements(GL_TRIANGLES, mesh.NumIndexes, GL_UNSIGNED_INT, (GLvoid*)(sizeof(uint) * mesh.BaseIndex));
+    }
+
+    // Release
+    m_indexBuffer.release();
+    m_vertexBuffer.release();
+}
+
+QVector3D Model3D::getPosition() const
+{
+    return m_translate;
 }
 
 void Model3D::clear()
@@ -154,6 +280,11 @@ bool Model3D::initFromScene(const aiScene *pScene)
                             toQMatrix4x4(pScene->mRootNode->mTransformation),
                             vectors);
 
+    /* Determinate cube min and max corners minCorner(minX, minY, minZ) maxCorner(maxX, maxY, maxZ)
+     * for futher use when creating cube for visualise selection
+    */
+    determinateSelectionCube(vectors);
+
     // Bind VertexData array
     m_vertexBuffer.create();
     m_vertexBuffer.bind();
@@ -172,6 +303,110 @@ bool Model3D::initFromScene(const aiScene *pScene)
     return true;
 }
 
+void Model3D::determinateSelectionCube(VectorsForShader& vectors)
+{
+    QVector3D minCorner, maxCorner;
+    bool isFirst = true;
+
+
+    for (int i = 0; i < m_meshes.size(); ++i) {
+        const Mesh& mesh = m_meshes[i];
+        const QMatrix4x4& transformMatrix = m_transformMatrixes[mesh.TransformMatrixIndex];
+
+        for (int j = mesh.BaseVertex; j < mesh.BaseVertex + mesh.NumVertexes; ++j)
+        {
+            QVector4D realPos = transformMatrix * QVector4D(vectors.VertexDatas[j].position, 1);
+
+            if (isFirst)
+            {
+                minCorner = maxCorner = QVector3D(realPos.x(), realPos.y(), realPos.z());
+                isFirst = false;
+            }
+
+            if (realPos.x() > maxCorner.x())
+                maxCorner.setX(realPos.x());
+            else if (realPos.x() < minCorner.x())
+                minCorner.setX(realPos.x());
+
+            if (realPos.y() > maxCorner.y())
+                maxCorner.setY(realPos.y());
+            else if (realPos.y() < minCorner.y())
+                minCorner.setY(realPos.y());
+
+            if (realPos.z() > maxCorner.z())
+                maxCorner.setZ(realPos.z());
+            else if (realPos.z() < minCorner.z())
+                minCorner.setZ(realPos.z());
+        }
+    }
+
+
+    minCorner.setX(minCorner.x() - 0.5f);
+    minCorner.setZ(minCorner.z() - 0.5f);
+
+    maxCorner.setX(maxCorner.x() + 0.5f);
+    maxCorner.setZ(maxCorner.z() + 0.5f);
+
+    QVector<QVector3D> vertexes;
+    QVector<uint> indexes;
+
+    vertexes.resize(8);
+    indexes.resize(24);
+
+    vertexes[0] = minCorner;
+    vertexes[1] = QVector3D(minCorner.x(), minCorner.y(), maxCorner.z());
+    vertexes[2] = QVector3D(maxCorner.x(), minCorner.y(), maxCorner.z());
+    vertexes[3] = QVector3D(maxCorner.x(), minCorner.y(), minCorner.z());
+    vertexes[4] = QVector3D(minCorner.x(), maxCorner.y(), minCorner.z());
+    vertexes[5] = QVector3D(minCorner.x(), maxCorner.y(), maxCorner.z());
+    vertexes[6] = QVector3D(maxCorner.x(), maxCorner.y(), maxCorner.z());
+    vertexes[7] = QVector3D(maxCorner.x(), maxCorner.y(), minCorner.z());
+
+    // Bottom
+    indexes[0] = 0;
+    indexes[1] = 1;
+    indexes[2] = 1;
+    indexes[3] = 2;
+    indexes[4] = 2;
+    indexes[5] = 3;
+    indexes[6] = 3;
+    indexes[7] = 0;
+
+    // Top
+    indexes[8]  = 4;
+    indexes[9]  = 5;
+    indexes[10] = 5;
+    indexes[11] = 6;
+    indexes[12] = 6;
+    indexes[13] = 7;
+    indexes[14] = 7;
+    indexes[15] = 4;
+
+    // Corners
+
+    indexes[16] = 0;
+    indexes[17] = 4;
+    indexes[18] = 1;
+    indexes[19] = 5;
+    indexes[20] = 2;
+    indexes[21] = 6;
+    indexes[22] = 3;
+    indexes[23] = 7;
+
+    // Bind VertexData array
+    m_vertexBuffer_SelectionCube.create();
+    m_vertexBuffer_SelectionCube.bind();
+    m_vertexBuffer_SelectionCube.allocate(vertexes.constData(), vertexes.size() * sizeof(QVector3D));
+    m_vertexBuffer_SelectionCube.release();
+
+
+    // Bind index array
+    m_indexBuffer_SelectionCube.create();
+    m_indexBuffer_SelectionCube.bind();
+    m_indexBuffer_SelectionCube.allocate(indexes.constData(), indexes.size() * sizeof(uint));
+    m_indexBuffer_SelectionCube.release();
+}
+
 void Model3D::addVertexDatas(const aiMesh * const pMesh,
                                    QVector<VertexData> &vertexDatas, uint &vertexData_LastIndex)
 {
@@ -185,6 +420,7 @@ void Model3D::addVertexDatas(const aiMesh * const pMesh,
                     texCoords.toVector2D(),
                     toQVector3D(pMesh->mNormals[i])
                     );
+        vd.id = m_objId;
 
         vertexDatas[vertexData_LastIndex++] = vd;
     }
@@ -295,6 +531,13 @@ void Model3D::initMaterials(const aiScene *pScene)
             material->Specular = toQVector3D(color);
         else
             material->Specular = QVector3D(1.0f, 1.0f, 1.0f);
+
+        // Specular factor
+        float shininess;
+        if (pMaterial->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
+            material->Shininess = shininess;
+        else
+            material->Shininess = 0.0f;
         // End getting material properties
 
 
@@ -313,7 +556,7 @@ void Model3D::initMaterials(const aiScene *pScene)
 //                        Ret = false;
 //                    }
 
-                qDebug() << "S";
+                qDebug() << "Loaded object has texture. BUT THEY DONT HANDELED!!!";
             }
         }
 

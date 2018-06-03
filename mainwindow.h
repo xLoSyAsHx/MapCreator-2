@@ -13,6 +13,7 @@
 
 #include "Model3D_4/model3d.h"
 #include "landscape.h"
+#include "pickingtexture.h"
 
 
 class SimpleObject3D;
@@ -54,12 +55,13 @@ protected:
     void initCube(float width);
 
 private:
-    Camera3D *m_camera;
     SkyBox *m_skybox;
 
     QMatrix4x4 m_projectionMatrix;
     QOpenGLShaderProgram m_shaderProgram;
     QOpenGLShaderProgram m_shaderProgramSkyBox;
+    QOpenGLShaderProgram m_shaderProgramObjectPicking;
+    bool m_isObjectPicking = false;
 
     QVector2D m_mousePosition;
 

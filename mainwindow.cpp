@@ -16,23 +16,23 @@
 
 
 
+
+
 MainWindow::MainWindow(QWidget *parent) :
     QOpenGLWidget(parent)
 {
-    m_camera = new Camera3D;
-    m_camera->translate(QVector3D(0.0f, 0.0f, -5.0f));
+    Camera3D::Instance().translate(QVector3D(0.0f, 5.0f, -5.0f));
 }
 
 MainWindow::~MainWindow()
 {
-    delete m_camera;
-
+/*
     for (auto it = m_objects.begin(); it != m_objects.end(); ++it)
         delete *it;
 
     for (auto it = m_groups.begin(); it != m_groups.end(); ++it)
         delete *it;
-
+*/
     for (auto it = m_transformObjects.begin(); it != m_transformObjects.end(); ++it)
         delete *it;
 }
@@ -84,8 +84,8 @@ void MainWindow::initializeGL()
         }
     }
     */
-    m_model3dTest = new Model3D();
-    m_groups[1]->addObject(m_model3dTest);
+    //m_model3dTest = new Model3D();
+    //m_groups[1]->addObject(m_model3dTest);
     m_groups[1]->translate(QVector3D(12.0, 0.0f, 0.0f));
 
     // Group 3
@@ -100,11 +100,13 @@ void MainWindow::initializeGL()
     m_timer.start(2000, this);
     //m_model3dTest->loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
     //Test test;
-    m_model3dTest->loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
+    //m_model3dTest->loadFromFile("G:\\Programming\\Qt\\MapCreator\\9v.fbx");
 
 
     //m_landscape.reset(new Landscape(2, 2, 1));
-    m_landscape = new Landscape(10, 10, 1);
+    m_landscape = new Landscape(10, 10, 1, []() -> QVector4D {
+                                    return QVector4D(0.5, 0.5, 0.5, 0.5);
+                                });
 }
 
 void MainWindow::resizeGL(int w, int h)
@@ -117,34 +119,72 @@ void MainWindow::resizeGL(int w, int h)
 
 void MainWindow::paintGL()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (m_isObjectPicking == false)
+    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-    // Draw Skybox
-    m_shaderProgramSkyBox.bind();
-    // Set uniform values
-    m_shaderProgramSkyBox.setUniformValue("u_projectionMatrix", m_projectionMatrix);
+        // Draw Skybox
+        m_shaderProgramSkyBox.bind();
+        // Set uniform values
+        m_shaderProgramSkyBox.setUniformValue("u_projectionMatrix", m_projectionMatrix);
 
-    m_camera->draw(&m_shaderProgramSkyBox);
-    m_skybox->draw(&m_shaderProgramSkyBox, context()->functions());
+        Camera3D::Instance().draw(&m_shaderProgramSkyBox);
+        m_skybox->draw(&m_shaderProgramSkyBox, context()->functions());
 
-    m_shaderProgramSkyBox.release();
+        m_shaderProgramSkyBox.release();
 
 
-    // Draw objects
-    m_shaderProgram.bind();
-    // Set uniform values
-    m_shaderProgram.setUniformValue("u_projectionMatrix", m_projectionMatrix);
-    m_shaderProgram.setUniformValue("u_lightPosition", QVector4D(0.0, 0.0, 0.0, 1.0));
-    m_shaderProgram.setUniformValue("u_lightPower", 1.0f);
+        // Draw objects
+        m_shaderProgram.bind();
+        // Set uniform values
+        m_shaderProgram.setUniformValue("u_projectionMatrix", m_projectionMatrix);
+        m_shaderProgram.setUniformValue("u_lightPosition", QVector4D(0.0, 0.0, 0.0, 1.0));
+        m_shaderProgram.setUniformValue("u_lightPower", 1.0f);
 
-    m_camera->draw(&m_shaderProgram);
-    for (auto it = m_transformObjects.cbegin(); it != m_transformObjects.cend(); ++it)
-        (*it)->draw(&m_shaderProgram, context()->functions());
+        Camera3D::Instance().draw(&m_shaderProgram);
+        for (auto it = m_transformObjects.cbegin(); it != m_transformObjects.cend(); ++it)
+            (*it)->draw(&m_shaderProgram, context()->functions());
 
-    m_landscape->draw(&m_shaderProgram, context()->functions());
+        m_landscape->draw(&m_shaderProgram, context()->functions());
 
-    m_shaderProgram.release();
+        m_shaderProgram.release();
+    }
+    else
+    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        PickingTexture pickingTexture;
+
+
+        pickingTexture.Init(size().width(), size().height(),context()->functions());
+        pickingTexture.EnableWriting(context()->functions());
+
+        m_shaderProgramObjectPicking.bind();
+        // Set uniform values
+        m_shaderProgramObjectPicking.setUniformValue("u_projectionMatrix", m_projectionMatrix);
+
+        Camera3D::Instance().draw(&m_shaderProgramObjectPicking);
+        for (auto it = m_transformObjects.cbegin(); it != m_transformObjects.cend(); ++it)
+            (*it)->objectPicking(&m_shaderProgramObjectPicking, context()->functions());
+
+        m_landscape->objectPicking(&m_shaderProgramObjectPicking, context()->functions());
+
+        m_shaderProgramObjectPicking.release();
+
+        m_isObjectPicking = false;
+        pickingTexture.DisableWriting(context()->functions());
+
+
+        pickingTexture.ReadPixel(
+                    m_mousePosition.x(), m_mousePosition.y(), context()->functions());
+
+
+
+
+
+        qDebug() << "Object picking";
+    }
 
 
 
@@ -166,6 +206,7 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 {
     if (event->buttons() == Qt::LeftButton) {
         m_mousePosition = QVector2D(event->localPos());
+        m_isObjectPicking = true;
     }
 
     event->accept();
@@ -182,14 +223,14 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
 
     QVector3D axis = QVector3D(diff.y(), diff.x(), 0.0f);
 
-    m_camera->rotate(QQuaternion::fromAxisAndAngle(axis, angle));
+    Camera3D::Instance().rotate(QQuaternion::fromAxisAndAngle(axis, angle));
 
     update();
 }
 
 void MainWindow::wheelEvent(QWheelEvent *event)
 {
-    m_camera->translate(QVector3D(0.0f, 0.0f, 0.01 * event->delta()));
+    Camera3D::Instance().translate(QVector3D(0.0f, 0.0f, 0.01 * event->delta()));
     update();
 }
 
@@ -233,6 +274,8 @@ void MainWindow::timerEvent(QTimerEvent *event)
 
 void MainWindow::initShaders()
 {
+    //bool status = m_shaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/landscape.fsh");
+
     if (!m_shaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, "://vshader.vsh")) {
         QMessageBox::about(this, "Error", "Can't add shader from source file 'vshader.vsh'");
         close();
@@ -261,6 +304,25 @@ void MainWindow::initShaders()
     }
 
     if (!m_shaderProgramSkyBox.link()) {
+        QMessageBox::about(this, "Error", "Can't link shader program");
+        close();
+    }
+
+
+
+
+    // Object picking shader
+    if (!m_shaderProgramObjectPicking.addShaderFromSourceFile(QOpenGLShader::Vertex, "://object_picking.vsh")) {
+        QMessageBox::about(this, "Error", "Can't add shader from source file 'object_picking.vsh'");
+        close();
+    }
+
+    if (!m_shaderProgramObjectPicking.addShaderFromSourceFile(QOpenGLShader::Fragment, "://object_picking.fsh")) {
+        QMessageBox::about(this, "Error", "Can't add shader from source file 'object_picking.fsh'");
+        close();
+    }
+
+    if (!m_shaderProgramObjectPicking.link()) {
         QMessageBox::about(this, "Error", "Can't link shader program");
         close();
     }

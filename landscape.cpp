@@ -1,13 +1,21 @@
 #include "landscape.h"
+#include "utils.h"
+#include "camera3d.h"
 
-Landscape::Landscape(uint width, uint height, uint blockSize) :
+#include <QThread>
+
+Landscape::Landscape(uint width, uint height, uint blockSize, Mfunc generateId) :
     m_width(width), m_length(height), m_blockSize(blockSize),
     m_indexBuffer(QOpenGLBuffer::IndexBuffer),
     m_vertexBuffer(QOpenGLBuffer::VertexBuffer)
 {
+    m_landscapeMaterial.Diffuse = QVector3D(0.01f, 0.01f, 0.01f);
+    m_landscapeMaterial.Ambient = QVector3D(0.33f, 0.38f, 0.44f);
+    m_landscapeMaterial.Specular = QVector3D(0, 0, 0);
 
     fillIndexes(width, height);
-    fillVertexes(width, height, blockSize);
+    fillVertexes(width, height, blockSize, generateId);
+    fillTextureCoords(width, height);
 
     m_indexBuffer.create();
     m_indexBuffer.bind();
@@ -51,6 +59,34 @@ void Landscape::draw(QOpenGLShaderProgram *shaderProgram, QOpenGLFunctions *func
     modelMatrix.setToIdentity();
 
     shaderProgram->setUniformValue("u_modelMatrix", modelMatrix);
+    shaderProgram->setUniformValue("u_isLandscape", 1);
+
+    if (m_landscapeMaterial.bind(aiTextureType_DIFFUSE, 0))
+    {
+        shaderProgram->setUniformValue("u_texture0", 0);
+        shaderProgram->setUniformValue("u_hasTexture", 1);
+    }
+    else
+    {
+        shaderProgram->setUniformValue("u_hasTexture", 0);
+
+        shaderProgram->setUniformValue("u_diffuse", m_landscapeMaterial.Diffuse);
+        shaderProgram->setUniformValue("u_ambient", m_landscapeMaterial.Ambient);
+        shaderProgram->setUniformValue("u_specular", m_landscapeMaterial.Specular);
+        shaderProgram->setUniformValue("u_shininess", m_landscapeMaterial.Shininess);
+    }
+
+
+    if (m_isSculpToolUse)
+    {
+        shaderProgram->setUniformValue("u_isLandscapeSculptToolEnable", 1);
+        shaderProgram->setUniformValue("u_spotLightPosition", LandscapeSculptTool::Instance().getCenter());
+
+    }
+    else
+    {
+        shaderProgram->setUniformValue("u_isLandscapeSculptToolEnable", 0);
+    }
 
     // Bind buffers
     m_vertexBuffer.bind();
@@ -80,9 +116,106 @@ void Landscape::draw(QOpenGLShaderProgram *shaderProgram, QOpenGLFunctions *func
     // Draw
     functions->glDrawElements(GL_TRIANGLES, m_indexBuffer.size(), GL_UNSIGNED_INT, 0);
 
+    if (m_landscapeMaterial.isBound(aiTextureType_DIFFUSE))
+        m_landscapeMaterial.release(aiTextureType_DIFFUSE);
+
     // Release
     m_indexBuffer.release();
     m_vertexBuffer.release();
+}
+
+void Landscape::objectPicking(QOpenGLShaderProgram *shaderProgram, QOpenGLFunctions *functions)
+{
+    QMatrix4x4 modelMatrix;
+    modelMatrix.setToIdentity();
+
+    shaderProgram->setUniformValue("u_modelMatrix", modelMatrix);
+
+
+    // Bind buffers
+    m_vertexBuffer.bind();
+    m_indexBuffer.bind();
+
+    int offset = 0;
+
+    // Set varying attribute "a_position"
+    int location = shaderProgram->attributeLocation("a_position");
+    shaderProgram->enableAttributeArray(location);
+    shaderProgram->setAttributeBuffer(location, GL_FLOAT, offset, 3, sizeof(VertexData));
+
+
+    offset += sizeof(QVector3D);
+    // Set varying attribute "a_textCoord"
+    location = shaderProgram->attributeLocation("a_textCoord");
+    shaderProgram->enableAttributeArray(location);
+    shaderProgram->setAttributeBuffer(location, GL_FLOAT, offset, 2, sizeof(VertexData));
+
+
+    offset += sizeof(QVector2D);
+    // Set varying attribute "a_normal"
+    location = shaderProgram->attributeLocation("a_normal");
+    shaderProgram->enableAttributeArray(location);
+    shaderProgram->setAttributeBuffer(location, GL_FLOAT, offset, 3, sizeof(VertexData));
+
+    offset += sizeof(QVector3D);
+    // Set varying attribute "a_id"
+    location = shaderProgram->attributeLocation("a_id");
+    shaderProgram->enableAttributeArray(location);
+    shaderProgram->setAttributeBuffer(location, GL_FLOAT, offset, 4, sizeof(VertexData));
+
+    // Pick objects
+
+
+    functions->glDrawElements(GL_TRIANGLES, m_indexBuffer.size(), GL_UNSIGNED_INT, 0);
+
+    // Release
+    m_indexBuffer.release();
+    m_vertexBuffer.release();
+}
+
+QVector3D Landscape::getPosition() const
+{
+    return QVector3D(0, 0, 0);
+}
+
+Landscape::PrimitivePointPositions Landscape::getTrianglePointGlobalPositions(
+        int triangleId, QMatrix4x4 projectionMatrix)
+{
+    int triangleRow = triangleId / (2 * m_width);
+    int triangleColumn = (triangleId - triangleRow * (2 * m_width)) / 2;
+
+    int pointA, pointB, pointC;
+
+    if (triangleId % 2 == 0)
+    {
+        pointA = triangleRow * (m_width + 1) + triangleColumn;
+        pointB = pointA + (m_width + 1);
+        pointC = pointA + 1;
+    }
+    else
+    {
+        pointA = triangleRow * (m_width + 1) + triangleColumn + 1;
+        pointB = pointA + m_width;
+        pointC = pointB + 1;
+    }
+
+    QMatrix4x4 modelMatrix;
+    modelMatrix.setToIdentity();
+
+    QMatrix4x4 transformMat = Camera3D::Instance().getViewMatrix() * modelMatrix;
+    transformMat = projectionMatrix * transformMat;
+
+    PrimitivePointPositions positions;
+    positions.pointA = m_vertexes[pointA].position;
+    positions.pointB = m_vertexes[pointB].position;
+    positions.pointC = m_vertexes[pointC].position;
+
+    return positions;
+}
+
+void Landscape::addTexture(aiTextureType type, QOpenGLTexture *image)
+{
+    m_landscapeMaterial.addTexture(type, image);
 }
 
 void Landscape::calculateNormals()
@@ -130,6 +263,11 @@ void Landscape::resetBuffers()
 
 }
 
+void Landscape::setSculptToolUsage(bool isLandscapeSculptToolUse)
+{
+    m_isSculpToolUse = isLandscapeSculptToolUse;
+}
+
 void Landscape::clear()
 {
     m_vertexes.clear();
@@ -141,6 +279,7 @@ void Landscape::clear()
 void Landscape::fillIndexes(uint width, uint height)
 {
     m_indexes.resize(width * height * 2 * 3);
+    long size = sizeof(m_indexes);
 
     uint lastAddIndex = 0;
     uint plusShift = width + 1;
@@ -167,7 +306,7 @@ void Landscape::fillIndexes(uint width, uint height)
     }
 }
 
-void Landscape::fillVertexes(uint width, uint height, uint blockSize)
+void Landscape::fillVertexes(uint width, uint height, uint blockSize, Mfunc generateId)
 {
     m_vertexes.resize((width + 1) * (height + 1));
 
@@ -175,8 +314,22 @@ void Landscape::fillVertexes(uint width, uint height, uint blockSize)
 
     for (uint i = 0; i < height + 1; ++i) {
         for (uint j = 0; j < width + 1; ++j) {
-            m_vertexes[i * (width + 1) + j].position = QVector3D(blockSize * j, 0, blockSize * i) - halfLensOfLandscape;
+            m_vertexes[i * (width + 1) + j].position =
+                    QVector3D(blockSize * j, 0, blockSize * i) - halfLensOfLandscape;
             m_vertexes[i * (width + 1) + j].normal = QVector3D(0, 1, 0);
+            m_vertexes[i * (width + 1) + j].id = generateId();
+        }
+    }
+}
+
+void Landscape::fillTextureCoords(uint width, uint height)
+{
+    for (uint i = 0; i < height + 1; ++i) {
+        for (uint j = 0; j < width + 1; ++j) {
+            m_vertexes[i * (width + 1) + j].texCoord = QVector2D(
+                        (float)j / (float)width,
+                        (float)i / (float)height
+                        );
         }
     }
 }
@@ -352,6 +505,9 @@ uint Landscape::getIndexByShiftFromCenter(int x, int y) const
 
 void Landscape::refreshByLandscapeTool()
 {
+
+    qDebug() << "Start refresh";
+
     LandscapeSculptTool& tool = LandscapeSculptTool::Instance();
 
     if (isCircleIntersectsLandscape(tool.getCenter(), tool.getRadius()) == false)
@@ -365,18 +521,40 @@ void Landscape::refreshByLandscapeTool()
     QVector<uint> downSide = getCircleDownSide(infoForUpdate);
     QVector<uint> topSide = getCircleTopSide(infoForUpdate);
 
+    if (topSide.size() % 2 != 0 ||
+        downSide.size() % 2 != 0)
+    {
+        qDebug() << "\n ERROR!!! some side vector's size remainder of division by 2 doesn't equal zero\n";
+        return;
+    }
+
+    //qDebug() << "After topSide and DownSide";
+
 
     if (isCircleIntersectsLandscape(tool.getCenter(), tool.getRadius() * tool.getBrushFalloff()) == false)
         infoForUpdate.CanUpdate = false;
     else
         prepareInfoForUpdateInnerCircle(infoForUpdate);
 
+    //qDebug() << "After prepate for inner circle update";
+
     QVector<uint> downInteriorSide = getCircleDownSide(infoForUpdate);
     QVector<uint> topInteriorSide = getCircleTopSide(infoForUpdate);
+
+    if (topInteriorSide.size() % 2 != 0 ||
+        downInteriorSide.size() % 2 != 0)
+    {
+        qDebug() << "\n ERROR!!! some InteriorSide vector's size remainder of division by 2 doesn't equal zero\n";
+        return;
+    }
+
 
     // startIndex должен быть на той же строке на которой был при расчёте внешнего кольца
     //fillPerimeter(downInteriorSide, topInteriorSide, indexesForUpdateVertexes, indexForUpdateNormalsOnIntersects,
     //	toolCenter, size * toolFalloff, false);
+
+
+    //qDebug() << "After downInteriorSide and topInteriorSide";
 
     // Update Down side
     updateVertexPositions(downSide, downInteriorSide, tool.getToolStrength());
@@ -394,7 +572,10 @@ void Landscape::refreshByLandscapeTool()
 
     // Обновлять нормали надо только когда перестаёт быть активным LandscapeSculptTool
 
-    qDebug() << "Before rewrite buffer";
+
+
+    //qDebug() << "Before rewrite buffer";
+
 
     // Определить с какого места и сколько VertexDatas надо обновить в вершинном буфере
     int offset = infoForUpdate.IndexBorder.TopLeft * sizeof(VertexData);
@@ -404,10 +585,10 @@ void Landscape::refreshByLandscapeTool()
     m_vertexBuffer.write(offset, m_vertexes.data() + infoForUpdate.IndexBorder.TopLeft, count);
     m_vertexBuffer.release();
 
+    qDebug() << "After rewrite buffer";
 
 
     // Обновить данные в вершинном буфере
-
 
 
     //return getSmallestBorderForTool(center, size);
@@ -433,22 +614,29 @@ void Landscape::prepareInfoForUpdateOuterRing(Landscape::InformationForUpdate &i
 
 void Landscape::prepareInfoForUpdateInnerCircle(Landscape::InformationForUpdate &info)
 {
+    qDebug() << "In the start of prepate for inner circle update";
+
+
     info.ToolRadius = LandscapeSculptTool::Instance().getRadius() * LandscapeSculptTool::Instance().getBrushFalloff();
     info.IndexBorder = getIndexBorderForToolBySize(info.ToolCenter, info.ToolRadius);
     info.IsNeedToCheckBorderIntersects = false;
 
     LandscapeSculptTool::InsideCircleChecker checker(info.ToolRadius, info.ToolCenter);
 
-    for (int i = 0; ; ++i)
+    for (int i = 0; i + info.StartIndex < m_vertexes.size(); ++i)
     {
         int index = info.StartIndex + i;
 
         if (checker.isInside(m_vertexes[index].position))
         {
-            info.StartIndex = info.CurrentIndex = info.PrevIndex = index;
-            break;
+            info.StartIndex = info.CurrentIndex = info.PrevIndex = index - 1;
+            return;
         }
     }
+
+    info.statusNoErr = false;
+
+    qDebug() << "In the end of prepate for inner circle update";
 
     /*
     QPair<int, int> startAndX_indexes = getStartAndXIndexes(info.IndexBorder, info.ToolCenter, info.ToolRadius);
@@ -470,8 +658,39 @@ QVector<uint> Landscape::getCircleDownSide(Landscape::InformationForUpdate info)
     LandscapeSculptTool::InsideCircleChecker checker(info.ToolRadius, info.ToolCenter);
     QVector<uint> downSide;
 
+    for (int i = info.CurrentIndex; i <= info.IndexBorder.DownLeft; i += info.RowLength)
+    {
+        for (int j = 0; j < info.RowLength; ++j)
+        {
+            int curIndex = i + j;
+            QVector3D pos = m_vertexes[curIndex].position;
+            if (checker.isInside(m_vertexes[curIndex].position) == true)
+            {
+                downSide.push_back(curIndex);
+                break;
+            }
+        }
+    }
+
+    for (int i = info.IndexBorder.DownRight; i > info.CurrentIndex; i -= info.RowLength)
+    {
+        for (int j = 0; j < info.RowLength; ++j)
+        {
+            int curIndex = i - j;
+            if (checker.isInside(m_vertexes[curIndex].position) == true)
+            {
+                downSide.push_back(curIndex);
+                break;
+            }
+        }
+    }
+
+    return downSide;
+
     // Fill DownLeft Side
     while (info.CurrentIndex < info.IndexBorder.DownLeft + info.RowLength) {
+
+
 
         if (checker.isInside(m_vertexes[info.CurrentIndex].position) == true)
         {
@@ -500,6 +719,14 @@ QVector<uint> Landscape::getCircleDownSide(Landscape::InformationForUpdate info)
     // Fill DownRight Side
     while (info.CurrentIndex > info.StartIndex)
     {
+
+
+        if (info.CurrentIndex + 1 > m_vertexes.size())
+        {
+            info.statusNoErr = false;
+            return QVector<uint>();
+        }
+
         bool isRowChanged = false;
 
         // Because if row changed that we can add PrevIndex to the vector.
@@ -527,6 +754,8 @@ QVector<uint> Landscape::getCircleDownSide(Landscape::InformationForUpdate info)
 
 QVector<uint> Landscape::getCircleTopSide(Landscape::InformationForUpdate info)
 {
+
+    qDebug() << "In circle top side";
     if (info.CanUpdate == false)
             return QVector<uint>();
 
@@ -536,8 +765,38 @@ QVector<uint> Landscape::getCircleTopSide(Landscape::InformationForUpdate info)
     // Prepare for fill TopLeft Side
     info.CurrentIndex = info.StartIndex - (m_width + 1);
 
+    for (int i = info.CurrentIndex + info.RowLength; i > info.IndexBorder.TopLeft; i -= info.RowLength)
+    {
+        for (int j = 0; j < info.RowLength; ++j)
+        {
+            int curIndex = i - j;
+            if (checker.isInside(m_vertexes[curIndex].position) == true)
+            {
+                topSide.push_back(curIndex);
+                break;
+            }
+        }
+    }
+
+    for (int i = info.IndexBorder.TopLeft; i < info.CurrentIndex + info.RowLength; i += info.RowLength)
+    {
+        for (int j = 0; j < info.RowLength; ++j)
+        {
+            int curIndex = i + j;
+            if (checker.isInside(m_vertexes[curIndex].position) == true)
+            {
+                topSide.push_back(curIndex);
+                break;
+            }
+        }
+    }
+
+    return topSide;
+
     // Fill TopLeft Side
     while (info.CurrentIndex >= info.IndexBorder.TopLeft) {
+        qDebug() << info.CurrentIndex;
+
 
         if (checker.isInside(m_vertexes[info.CurrentIndex].position) == true)
         {
@@ -549,21 +808,29 @@ QVector<uint> Landscape::getCircleTopSide(Landscape::InformationForUpdate info)
         }
     }
 
+    qDebug() << "After first cycle 1";
+
     // Find the most right index in the most down row
     //info.CurrentIndex += info.RowLength;
-    if (topSide.isEmpty() == true)
+    if (topSide.isEmpty() == true) {
+        qDebug() << "Top side is empty";
         return topSide;
+    }
 
     info.CurrentIndex = topSide.last();
     while (checker.isInside(m_vertexes[info.CurrentIndex].position)) {
         ++info.CurrentIndex;
     }
 
+    qDebug() << "After first cycle 2";
+
     // Prepare for fill DownRight Side
     info.PrevIndex = info.CurrentIndex - 1;
 
     // Fill TopRight Side
     while (info.CurrentIndex < info.StartIndex) {
+
+
         if (checker.isInside(m_vertexes[info.CurrentIndex].position) == false)
         {
             topSide.push_back(info.PrevIndex);

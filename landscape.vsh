@@ -6,15 +6,10 @@ uniform mat4 u_projectionMatrix;
 uniform mat4 u_viewMatrix;
 uniform mat4 u_modelMatrix;
 
-
-uniform vec2 u_spotLightPosition;
-
 // Output
 varying vec2 v_textCoord;
 varying vec3 v_normal;
 varying vec4 v_position;
-varying vec2 v_notTransformedPosition;
-//varying vec2 v_spotLightPosition;;
 
 
 //
@@ -26,14 +21,8 @@ void main(void)
     mat4 mv_matrix = u_viewMatrix * u_modelMatrix;
 
     gl_Position = u_projectionMatrix * mv_matrix * a_position;
-    /*
-    v_spotLightPosition = vec4(
-                u_projectionMatrix *
-                mv_matrix *
-                vec4(u_spotLightPosition.x, 0, u_spotLightPosition.y, 1)).xz;
-*/
+
     v_textCoord = a_textCoord;
     v_normal = normalize(vec3(mv_matrix * vec4(a_normal, 0.0)));
     v_position = mv_matrix * a_position;
-    v_notTransformedPosition = a_position.xz;
 }

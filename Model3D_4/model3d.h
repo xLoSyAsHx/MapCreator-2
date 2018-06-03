@@ -40,9 +40,7 @@ public:
 #endif
 
 
-
-
-    Model3D();
+    Model3D(QVector4D objId);
     ~Model3D();
 
     bool loadFromFile(QString filename);
@@ -53,23 +51,16 @@ public:
     void scale(const float scaleKoef) override;
     void setGlobalTransform(const QMatrix4x4 &matrix) override;
     void draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions) override;
+    void drawSelectionCubes(QOpenGLShaderProgram *program, QOpenGLFunctions *functions) override;
+    void objectPicking(QOpenGLShaderProgram *programm, QOpenGLFunctions *functions) override;
+
+    QVector3D getPosition() const override;
 
 private:
 
     void clear();
 
     bool initFromScene(const aiScene *pScene);
-
-    void addVertexDatas(const aiMesh* const pMesh,
-                            QVector<VertexData> &vertexDatas,
-                            uint &vertexData_LastIndex);
-
-    void addIndexes(const aiMesh* const pMesh,
-                    QVector<uint> &indexes,
-                    uint &indexes_LastIndex,
-                    uint shift);
-
-
 
     struct VectorsForShader {
         VectorsForShader(aiMesh** meshes, uint size)
@@ -98,6 +89,17 @@ private:
         aiMesh** Meshes;
     };
 
+    void determinateSelectionCube(VectorsForShader& vectors);
+
+    void addVertexDatas(const aiMesh* const pMesh,
+                            QVector<VertexData> &vertexDatas,
+                            uint &vertexData_LastIndex);
+
+    void addIndexes(const aiMesh* const pMesh,
+                    QVector<uint> &indexes,
+                    uint &indexes_LastIndex,
+                    uint shift);
+
     void recursiveProcessAiNodes(
             const aiNode* pNode, QMatrix4x4 transformMatrix, VectorsForShader& vectors, uint lastMeshIndex = 0);
 
@@ -121,7 +123,19 @@ private:
     QVector<Mesh> m_meshes;
     QVector<QSharedPointer<Material>> m_materials;
     QVector<QMatrix4x4> m_transformMatrixes;
+
+    QVector3D m_translate;
+    QQuaternion m_rotate;
+    QVector3D m_scale;
+
     QMatrix4x4 m_globalTransform;
+
+    QVector4D m_objId;
+    QVector3D m_minCubeCorner;
+    QVector3D m_maxCubeCorner;
+
+    QOpenGLBuffer m_vertexBuffer_SelectionCube;
+    QOpenGLBuffer m_indexBuffer_SelectionCube;
 };
 
 #endif // MODEL3D_4_H

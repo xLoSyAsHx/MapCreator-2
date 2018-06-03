@@ -90,3 +90,8 @@ void SkyBox::draw(QOpenGLShaderProgram *program, QOpenGLFunctions *functions)
 {
     m_cube->draw(program, functions);
 }
+
+QVector3D SkyBox::getPosition() const
+{
+    return QVector3D(0, 0, 0);
+}
